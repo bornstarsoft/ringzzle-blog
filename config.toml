@@ -1,10 +1,14 @@
 
-baseURL = "https://ringzzle-blog.pages.dev/"
+baseURL = "https://ringzzle.com/"
 languageCode = "en-us"
-title = "Ringzzle Blog"
+title = "Ringzzle"
 theme = "ananke"
-buildFuture = true
-paginate = 10
+
+enableRobotsTXT = true
+buildFuture = false
+
+[pagination]
+pagerSize = 10
 
 [params]
   mainSections = ["posts"]
