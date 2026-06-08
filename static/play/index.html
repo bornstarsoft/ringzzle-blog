@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#13281f" />
+  <meta name="description"
+    content="Place colorful rings, clear lines, complete cells, and chase your best score." />
+  <title>Ringzzle — Free Color Rings Puzzle Game Online</title>
+  <link rel="stylesheet" href="/play/css/ringzzle.v001.css" />
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "VideoGame",
+      "name": "Ringzzle",
+      "genre": ["Color rings puzzle", "Puzzle", "Casual game"],
+      "gamePlatform": ["Web browser", "HTML5"],
+      "url": "https://ringzzle.com/play/",
+      "description": "Place colorful rings, clear lines, complete cells, and chase your best score."
+    }
+  </script>
+</head>
+
+<body>
+  <main class="play-shell" aria-label="Ringzzle game">
+    <section
+      style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0;"
+      aria-labelledby="ringzzle-play-title">
+      <h1 id="ringzzle-play-title">Ringzzle</h1>
+      <p>Free color rings puzzle game. No install. Just play.</p>
+      <p>Place colorful rings, clear lines, complete cells, and chase your best score.</p>
+    </section>
+    <div id="ringzzle-game" class="game-stage" role="application" aria-label="Ringzzle"></div>
+    <noscript>
+      <section class="noscript-card">
+        <h1>Ringzzle</h1>
+        <p>JavaScript is required to play this free color rings puzzle game in your browser.</p>
+      </section>
+    </noscript>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
+  <script src="/play/js/ringzzle-phaser.v001.js"></script>
+</body>
+
+</html>
