@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v006.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v004.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -109,8 +109,6 @@ test("clears a row when colors match even if ring sizes differ", () => {
   assert.strictEqual(result.lineClears, 1);
   assert.strictEqual(result.clearedRings, 3);
   assert.strictEqual(result.scoreDelta, 110);
-  assert.deepStrictEqual(result.lineEvents[0].cells, [[0, 0], [1, 0], [2, 0]]);
-  assert.strictEqual(result.lineEvents[0].color, 2);
   assert.deepStrictEqual(game.board[0][0], { small: null, medium: null, large: null });
   assert.deepStrictEqual(game.board[0][1], { small: null, medium: null, large: null });
   assert.deepStrictEqual(game.board[0][2], { small: null, medium: null, large: null });
@@ -205,53 +203,19 @@ test("supports overlapping color line clears without double-counting the center 
   assert.deepStrictEqual(game.board[2][1], { small: null, medium: null, large: null });
 });
 
-test("triggers a color burst when a cell completes all three same-color rings", () => {
+test("awards and clears a same-cell full color bonus", () => {
   const game = makeGame();
   game.board[2][2].small = 5;
   game.board[2][2].medium = 5;
-  game.board[0][0].small = 5;
-  game.board[0][1].medium = 5;
-  game.board[1][0].large = 4;
   game.tray = [piece("large", 5), null, null];
 
   const result = game.placeTrayPiece(0, 2, 2);
 
   assert.strictEqual(result.placed, true);
-  assert.strictEqual(result.colorBursts, 1);
   assert.strictEqual(result.cellBonuses, 1);
-  assert.strictEqual(result.clearedRings, 5);
+  assert.strictEqual(result.clearedRings, 3);
   assert.strictEqual(result.scoreDelta, 160);
-  assert.deepStrictEqual(result.colorBurstEvents[0].cells, [{ x: 2, y: 2 }]);
-  assert.strictEqual(result.colorBurstEvents[0].color, 5);
-  assert.deepStrictEqual(game.board[0][0], { small: null, medium: null, large: null });
-  assert.deepStrictEqual(game.board[0][1], { small: null, medium: null, large: null });
-  assert.deepStrictEqual(game.board[1][0], { small: null, medium: null, large: 4 });
   assert.deepStrictEqual(game.board[2][2], { small: null, medium: null, large: null });
-});
-
-test("overlapping line clear and color burst do not double-count cleared rings", () => {
-  const game = makeGame();
-  game.board[0][0].small = 2;
-  game.board[0][1].medium = 2;
-  game.board[0][2].small = 2;
-  game.board[0][2].medium = 2;
-  game.board[1][1].small = 2;
-  game.board[2][2].large = 3;
-  game.tray = [piece("large", 2), null, null];
-
-  const result = game.placeTrayPiece(0, 2, 0);
-
-  assert.strictEqual(result.placed, true);
-  assert.strictEqual(result.lineClears, 1);
-  assert.strictEqual(result.colorBursts, 1);
-  assert.strictEqual(result.clearEvents, 2);
-  assert.strictEqual(result.clearedRings, 6);
-  assert.strictEqual(result.scoreDelta, 310);
-  assert.deepStrictEqual(game.board[0][0], { small: null, medium: null, large: null });
-  assert.deepStrictEqual(game.board[0][1], { small: null, medium: null, large: null });
-  assert.deepStrictEqual(game.board[0][2], { small: null, medium: null, large: null });
-  assert.deepStrictEqual(game.board[1][1], { small: null, medium: null, large: null });
-  assert.deepStrictEqual(game.board[2][2], { small: null, medium: null, large: 3 });
 });
 
 test("reports game over when no active tray ring can fit anywhere", () => {
@@ -367,40 +331,8 @@ test("keeps the board and bottom tray inside target iPhone portrait viewports", 
   });
 });
 
-test("uses short board-contained v006 visual effect timing", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v006");
-  assert.ok(RingzzleCore.VISUAL_EFFECTS.lineBeamDurationMs >= 180);
-  assert.ok(RingzzleCore.VISUAL_EFFECTS.lineBeamDurationMs <= 250);
-  assert.ok(RingzzleCore.VISUAL_EFFECTS.clearFlashDurationMs <= 200);
-  assert.ok(RingzzleCore.VISUAL_EFFECTS.colorBurstDurationMs <= 420);
-  assert.ok(RingzzleCore.VISUAL_EFFECTS.lineBeamCellExtensionRatio > 0);
-  assert.ok(RingzzleCore.VISUAL_EFFECTS.lineBeamCellExtensionRatio <= 0.45);
-});
-
-test("keeps v006 line beam geometry inside the board bounds", () => {
-  const layout = {
-    boardOrigin: { x: 20, y: 100 },
-    boardSize: 270,
-    cellSize: 90,
-  };
-  [
-    [[0, 1], [1, 1], [2, 1]],
-    [[1, 0], [1, 1], [1, 2]],
-    [[0, 0], [1, 1], [2, 2]],
-    [[2, 0], [1, 1], [0, 2]],
-  ].forEach((cells) => {
-    const segment = RingzzleCore.getLineBeamSegment(cells, layout);
-    [segment.start, segment.end].forEach((point) => {
-      assert.ok(point.x >= layout.boardOrigin.x, `x should stay inside board for ${JSON.stringify(cells)}`);
-      assert.ok(point.x <= layout.boardOrigin.x + layout.boardSize, `x should stay inside board for ${JSON.stringify(cells)}`);
-      assert.ok(point.y >= layout.boardOrigin.y, `y should stay inside board for ${JSON.stringify(cells)}`);
-      assert.ok(point.y <= layout.boardOrigin.y + layout.boardSize, `y should stay inside board for ${JSON.stringify(cells)}`);
-    });
-  });
-});
-
-test("formats v006 move feedback for placement, clears, combo, color burst, and game over", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v006");
+test("formats v004 move feedback for placement, clears, combo, cell bonus, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v004");
   assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),
@@ -411,8 +343,8 @@ test("formats v006 move feedback for placement, clears, combo, color burst, and 
     "Combo clear +260"
   );
   assert.strictEqual(
-    RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 160, clearEvents: 1, lineClears: 0, colorBursts: 1 }),
-    "Color Burst +160"
+    RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 160, clearEvents: 1, lineClears: 0, cellBonuses: 1 }),
+    "Cell bonus +160"
   );
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }, true),
