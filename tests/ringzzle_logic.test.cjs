@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v003.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v004.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -271,12 +271,12 @@ test("starts available color count low for early games", () => {
 });
 
 test("increases available color count by score progression", () => {
-  assert.strictEqual(RingzzleCore.getAvailableColorCount(299), 3);
-  assert.strictEqual(RingzzleCore.getAvailableColorCount(300), 4);
-  assert.strictEqual(RingzzleCore.getAvailableColorCount(899), 4);
-  assert.strictEqual(RingzzleCore.getAvailableColorCount(900), 5);
-  assert.strictEqual(RingzzleCore.getAvailableColorCount(1799), 5);
-  assert.strictEqual(RingzzleCore.getAvailableColorCount(1800), 6);
+  assert.strictEqual(RingzzleCore.getAvailableColorCount(149), 3);
+  assert.strictEqual(RingzzleCore.getAvailableColorCount(150), 4);
+  assert.strictEqual(RingzzleCore.getAvailableColorCount(499), 4);
+  assert.strictEqual(RingzzleCore.getAvailableColorCount(500), 5);
+  assert.strictEqual(RingzzleCore.getAvailableColorCount(1199), 5);
+  assert.strictEqual(RingzzleCore.getAvailableColorCount(1200), 6);
 });
 
 test("caps available color count at the configured maximum", () => {
@@ -288,7 +288,7 @@ test("caps available color count at the configured maximum", () => {
 test("tray generation respects current available color count", () => {
   const game = makeGame({ rng: () => 0.999 });
 
-  game.score = 900;
+  game.score = 500;
   game.refillTray();
   assert.strictEqual(game.availableColorCount, 5);
   assert.ok(game.tray.every((trayPiece) => trayPiece.color < 5));
@@ -331,8 +331,8 @@ test("keeps the board and bottom tray inside target iPhone portrait viewports", 
   });
 });
 
-test("formats v003 move feedback for placement, clears, combo, cell bonus, and game over", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v003");
+test("formats v004 move feedback for placement, clears, combo, cell bonus, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v004");
   assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),
