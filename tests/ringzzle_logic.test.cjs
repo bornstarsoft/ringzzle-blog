@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v005.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v006.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -367,8 +367,40 @@ test("keeps the board and bottom tray inside target iPhone portrait viewports", 
   });
 });
 
-test("formats v005 move feedback for placement, clears, combo, color burst, and game over", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v005");
+test("uses short board-contained v006 visual effect timing", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v006");
+  assert.ok(RingzzleCore.VISUAL_EFFECTS.lineBeamDurationMs >= 180);
+  assert.ok(RingzzleCore.VISUAL_EFFECTS.lineBeamDurationMs <= 250);
+  assert.ok(RingzzleCore.VISUAL_EFFECTS.clearFlashDurationMs <= 200);
+  assert.ok(RingzzleCore.VISUAL_EFFECTS.colorBurstDurationMs <= 420);
+  assert.ok(RingzzleCore.VISUAL_EFFECTS.lineBeamCellExtensionRatio > 0);
+  assert.ok(RingzzleCore.VISUAL_EFFECTS.lineBeamCellExtensionRatio <= 0.45);
+});
+
+test("keeps v006 line beam geometry inside the board bounds", () => {
+  const layout = {
+    boardOrigin: { x: 20, y: 100 },
+    boardSize: 270,
+    cellSize: 90,
+  };
+  [
+    [[0, 1], [1, 1], [2, 1]],
+    [[1, 0], [1, 1], [1, 2]],
+    [[0, 0], [1, 1], [2, 2]],
+    [[2, 0], [1, 1], [0, 2]],
+  ].forEach((cells) => {
+    const segment = RingzzleCore.getLineBeamSegment(cells, layout);
+    [segment.start, segment.end].forEach((point) => {
+      assert.ok(point.x >= layout.boardOrigin.x, `x should stay inside board for ${JSON.stringify(cells)}`);
+      assert.ok(point.x <= layout.boardOrigin.x + layout.boardSize, `x should stay inside board for ${JSON.stringify(cells)}`);
+      assert.ok(point.y >= layout.boardOrigin.y, `y should stay inside board for ${JSON.stringify(cells)}`);
+      assert.ok(point.y <= layout.boardOrigin.y + layout.boardSize, `y should stay inside board for ${JSON.stringify(cells)}`);
+    });
+  });
+});
+
+test("formats v006 move feedback for placement, clears, combo, color burst, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v006");
   assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),
