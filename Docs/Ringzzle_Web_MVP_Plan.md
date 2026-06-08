@@ -24,6 +24,8 @@ Game description:
 
 Ship a polished, browser-playable Classic mode at `/play/` with local score motivation and mobile portrait stability. v001 should be static, fast, and self-contained.
 
+Historical note: v001/v002 shipped with same color plus same size line clears. Owner clarification after v002 corrected this for v003: line clears are color-only across rows, columns, and diagonals; ring size affects placement occupancy only.
+
 ## v001 Gameplay Target
 
 - Board: 3x3.
@@ -34,7 +36,7 @@ Ship a polished, browser-playable Classic mode at `/play/` with local score moti
 - Cell occupancy: one ring per size per board cell.
 - Coexistence: different sizes can coexist in the same cell.
 - Placement: a tray ring can be placed only if the target cell does not already contain that ring size.
-- Line clear: same color plus same size clears across a full row, column, or diagonal.
+- Line clear: historical v001 target used same color plus same size; v003 supersedes this with color-only line clears.
 - Same-cell bonus: optional v001 bonus when small, medium, and large in one cell are the same color.
 - Score: show current score during play.
 - High score: save best score in localStorage.
@@ -61,8 +63,8 @@ Placement:
 Line clearing:
 
 - Check 8 lines after each valid placement: 3 rows, 3 columns, and 2 diagonals.
-- For each line, check each size independently.
-- Clear a line when all 3 cells in that line contain the same color in the same size slot.
+- Historical v001/v002 behavior checked each size independently.
+- Current v003 behavior clears a line when all 3 cells in that line contain the same color in any ring size.
 - Multiple lines may clear from one placement.
 - If two clear rules touch the same ring, clear it once.
 

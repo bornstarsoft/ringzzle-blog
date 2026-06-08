@@ -76,7 +76,7 @@ This document extracts gameplay behavior only. Do not copy Unity C# directly int
 - When a color line clears, Unity clears that color from each cell in the line.
 - Multiple colors and multiple lines can clear from one placement.
 
-Important web decision: Ringzzle Web v001 should use the user-specified rule: same color plus same size clears across a row, column, or diagonal. That is intentionally stricter than the Unity template line-clear behavior.
+Important v003 correction: Ringzzle Web v001/v002 incorrectly used same color plus same size for line clears. The correct Ringzzle / Color Rings rule is color-only across the line. Ring size affects placement occupancy only; it must not be part of the line-match requirement.
 
 ### Same-Cell Full Color Behavior
 
@@ -87,7 +87,7 @@ Important web decision: Ringzzle Web v001 should use the user-specified rule: sa
 - No direct score increment was observed for this behavior in the inspected files.
 - Unity plays merge feedback and may award a coin through the shared coin-chance flow.
 
-Important web decision: Ringzzle Web v001 may include a same-cell full-color bonus, but it should not automatically inherit the Unity global color clear unless that stronger behavior is explicitly selected after playtesting.
+Important web decision: Ringzzle Web may include a same-cell full-color bonus, but it should not automatically inherit the Unity global color clear unless that stronger behavior is explicitly selected after playtesting.
 
 ### Scoring
 
@@ -99,7 +99,7 @@ Important web decision: Ringzzle Web v001 may include a same-cell full-color bon
 - Because `lines.Count` is a multiplier, simultaneous detected lines can increase the value of cleared rings.
 - Same-cell full-color global clears do not appear to add score directly in the inspected files.
 
-Important web decision: Ringzzle Web v001 should use a clearer browser-friendly scoring model with visible placement, clear, combo, and optional same-cell bonus points.
+Important web decision: Ringzzle Web should use a clearer browser-friendly scoring model with visible placement, line clear, combo, and optional same-cell bonus points.
 
 ### Game Over
 
@@ -107,7 +107,7 @@ Important web decision: Ringzzle Web v001 should use a clearer browser-friendly 
 - It does not directly check whether the current next piece can fit.
 - The generation flow tries to create next pieces from available free slot patterns, which reduces the chance of an unplaceable next piece before the board is full.
 
-Important web decision: Ringzzle Web v001 should use the user-specified web rule: game over when no remaining tray ring can fit anywhere.
+Important web decision: Ringzzle Web should use the user-specified web rule: game over when no remaining tray ring can fit anywhere.
 
 ### Refill / Generation
 
@@ -117,18 +117,22 @@ Important web decision: Ringzzle Web v001 should use the user-specified web rule
 - Current color count updates after score changes.
 - The web v001 plan should use 3 tray pieces and refill only after all 3 are used.
 
-## Ringzzle Web v001 Rule Decisions
+## Ringzzle Web Current Rule Decisions
 
-Use these rules for the first web MVP:
+Use these rules for Ringzzle Web after the v003 core-rule correction:
 
 - 3x3 board.
 - 3 tray pieces.
 - One ring per tray piece.
 - Ring sizes: small, medium, large.
-- 6 initial colors, with a 5-color variant available for tuning.
+- 6-color palette cap in the current web build.
+- Available color count starts at 3 and increases by score progression.
 - One ring per size per cell.
 - Different sizes can coexist in one cell.
-- Same color plus same size line clear across row, column, or diagonal.
+- Same-color line clear across row, column, or diagonal.
+- Ring size is not part of line matching.
+- When a color line clears, remove matching-color rings in that line regardless of ring size.
+- Preserve nonmatching-color rings in the same involved cells.
 - Optional same-cell full-color bonus when small, medium, and large in one cell are the same color.
 - Score and high score.
 - High score saved in localStorage.
@@ -138,6 +142,6 @@ Use these rules for the first web MVP:
 
 ## Open Tuning Notes
 
-- Decide during implementation whether the same-cell full-color bonus clears only the completed cell or clears all rings of that color. The MVP recommendation is local-only.
-- Decide whether v001 should launch with 5 or 6 colors after playtesting.
+- The same-cell full-color bonus is currently local-only in web; decide later whether to test the stronger Unity-style global color clear.
+- Tune web color progression thresholds after playtesting. The Unity template thresholds are `25`, `50`, `150`, `250`, and `500`, but web v003 uses a wider score scale for its placement and clear scoring.
 - Keep Unity template behavior as a rules reference, not a direct code source.

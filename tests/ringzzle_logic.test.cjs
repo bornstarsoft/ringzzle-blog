@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v002.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v003.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -97,11 +97,11 @@ test("refills the tray only after all three tray slots have been used", () => {
   assert.ok(game.tray.every(Boolean), "tray should refill after the third piece is used");
 });
 
-test("clears a row only when color and size both match across three cells", () => {
+test("clears a row when colors match even if ring sizes differ", () => {
   const game = makeGame();
   game.board[0][0].small = 2;
-  game.board[0][1].small = 2;
-  game.tray = [piece("small", 2), null, null];
+  game.board[0][1].medium = 2;
+  game.tray = [piece("large", 2), null, null];
 
   const result = game.placeTrayPiece(0, 2, 0);
 
@@ -114,27 +114,78 @@ test("clears a row only when color and size both match across three cells", () =
   assert.deepStrictEqual(game.board[0][2], { small: null, medium: null, large: null });
 });
 
-test("does not clear same-color rings when their sizes are different", () => {
+test("does not clear a row when colors differ even if ring sizes match", () => {
   const game = makeGame();
   game.board[0][0].small = 2;
-  game.board[0][1].medium = 2;
-  game.tray = [piece("large", 2), null, null];
+  game.board[0][1].small = 2;
+  game.tray = [piece("small", 3), null, null];
 
   const result = game.placeTrayPiece(0, 2, 0);
 
   assert.strictEqual(result.placed, true);
   assert.strictEqual(result.lineClears, 0);
   assert.strictEqual(game.board[0][0].small, 2);
-  assert.strictEqual(game.board[0][1].medium, 2);
-  assert.strictEqual(game.board[0][2].large, 2);
+  assert.strictEqual(game.board[0][1].small, 2);
+  assert.strictEqual(game.board[0][2].small, 3);
 });
 
-test("supports simultaneous line clears with a simple multi-clear bonus", () => {
+test("clears a column by color regardless of ring sizes", () => {
   const game = makeGame();
-  game.board[1][0].medium = 4;
-  game.board[1][2].medium = 4;
+  game.board[0][1].small = 1;
+  game.board[1][1].medium = 1;
+  game.tray = [piece("large", 1), null, null];
+
+  const result = game.placeTrayPiece(0, 1, 2);
+
+  assert.strictEqual(result.placed, true);
+  assert.strictEqual(result.lineClears, 1);
+  assert.strictEqual(result.clearedRings, 3);
+  assert.deepStrictEqual(game.board[0][1], { small: null, medium: null, large: null });
+  assert.deepStrictEqual(game.board[1][1], { small: null, medium: null, large: null });
+  assert.deepStrictEqual(game.board[2][1], { small: null, medium: null, large: null });
+});
+
+test("clears a diagonal by color regardless of ring sizes", () => {
+  const game = makeGame();
+  game.board[0][0].small = 3;
+  game.board[1][1].medium = 3;
+  game.tray = [piece("large", 3), null, null];
+
+  const result = game.placeTrayPiece(0, 2, 2);
+
+  assert.strictEqual(result.placed, true);
+  assert.strictEqual(result.lineClears, 1);
+  assert.strictEqual(result.clearedRings, 3);
+  assert.deepStrictEqual(game.board[0][0], { small: null, medium: null, large: null });
+  assert.deepStrictEqual(game.board[1][1], { small: null, medium: null, large: null });
+  assert.deepStrictEqual(game.board[2][2], { small: null, medium: null, large: null });
+});
+
+test("removes only matching-color rings from a cleared line", () => {
+  const game = makeGame();
+  game.board[2][0].small = 2;
+  game.board[2][0].medium = 4;
+  game.board[2][1].medium = 2;
+  game.board[2][1].large = 5;
+  game.board[2][2].small = 0;
+  game.tray = [piece("large", 2), null, null];
+
+  const result = game.placeTrayPiece(0, 2, 2);
+
+  assert.strictEqual(result.placed, true);
+  assert.strictEqual(result.lineClears, 1);
+  assert.strictEqual(result.clearedRings, 3);
+  assert.deepStrictEqual(game.board[2][0], { small: null, medium: 4, large: null });
+  assert.deepStrictEqual(game.board[2][1], { small: null, medium: null, large: 5 });
+  assert.deepStrictEqual(game.board[2][2], { small: 0, medium: null, large: null });
+});
+
+test("supports overlapping color line clears without double-counting the center ring", () => {
+  const game = makeGame();
+  game.board[1][0].small = 4;
+  game.board[1][2].large = 4;
   game.board[0][1].medium = 4;
-  game.board[2][1].medium = 4;
+  game.board[2][1].large = 4;
   game.tray = [piece("medium", 4), null, null];
 
   const result = game.placeTrayPiece(0, 1, 1);
@@ -145,6 +196,11 @@ test("supports simultaneous line clears with a simple multi-clear bonus", () => 
   assert.strictEqual(result.scoreDelta, 260);
   assert.strictEqual(game.score, 260);
   assert.strictEqual(game.bestClearThisGame, 2);
+  assert.deepStrictEqual(game.board[1][0], { small: null, medium: null, large: null });
+  assert.deepStrictEqual(game.board[1][1], { small: null, medium: null, large: null });
+  assert.deepStrictEqual(game.board[1][2], { small: null, medium: null, large: null });
+  assert.deepStrictEqual(game.board[0][1], { small: null, medium: null, large: null });
+  assert.deepStrictEqual(game.board[2][1], { small: null, medium: null, large: null });
 });
 
 test("awards and clears a same-cell full color bonus", () => {
@@ -205,6 +261,44 @@ test("resets today best when the stored date is stale", () => {
   assert.strictEqual(stats.todayBestDate, "2026-06-08");
 });
 
+test("starts available color count low for early games", () => {
+  const game = makeGame({ rng: () => 0.999 });
+
+  assert.strictEqual(RingzzleCore.START_COLOR_COUNT, 3);
+  assert.strictEqual(RingzzleCore.getAvailableColorCount(0), 3);
+  assert.strictEqual(game.availableColorCount, 3);
+  assert.ok(game.tray.every((trayPiece) => trayPiece.color < 3));
+});
+
+test("increases available color count by score progression", () => {
+  assert.strictEqual(RingzzleCore.getAvailableColorCount(299), 3);
+  assert.strictEqual(RingzzleCore.getAvailableColorCount(300), 4);
+  assert.strictEqual(RingzzleCore.getAvailableColorCount(899), 4);
+  assert.strictEqual(RingzzleCore.getAvailableColorCount(900), 5);
+  assert.strictEqual(RingzzleCore.getAvailableColorCount(1799), 5);
+  assert.strictEqual(RingzzleCore.getAvailableColorCount(1800), 6);
+});
+
+test("caps available color count at the configured maximum", () => {
+  assert.strictEqual(RingzzleCore.MAX_COLOR_COUNT, 6);
+  assert.strictEqual(RingzzleCore.getAvailableColorCount(999999), 6);
+  assert.ok(RingzzleCore.getAvailableColorCount(999999) <= RingzzleCore.COLORS.length);
+});
+
+test("tray generation respects current available color count", () => {
+  const game = makeGame({ rng: () => 0.999 });
+
+  game.score = 900;
+  game.refillTray();
+  assert.strictEqual(game.availableColorCount, 5);
+  assert.ok(game.tray.every((trayPiece) => trayPiece.color < 5));
+
+  game.score = 999999;
+  game.refillTray();
+  assert.strictEqual(game.availableColorCount, 6);
+  assert.ok(game.tray.every((trayPiece) => trayPiece.color < 6));
+});
+
 test("exposes mobile layout helpers for portrait overlay and drag placement", () => {
   assert.deepStrictEqual(RingzzleCore.ORIENTATION_RECOVERY_DELAYS, [0, 100, 300, 600]);
   assert.strictEqual(RingzzleCore.shouldShowPortraitPrompt({ width: 844, height: 390 }), true);
@@ -237,8 +331,8 @@ test("keeps the board and bottom tray inside target iPhone portrait viewports", 
   });
 });
 
-test("formats v002 move feedback for placement, clears, combo, cell bonus, and game over", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v002");
+test("formats v003 move feedback for placement, clears, combo, cell bonus, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v003");
   assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),
