@@ -4,7 +4,7 @@ Date: 2026-06-08
 
 ## Scope
 
-This assessment covers the existing `ringzzle-blog` repository as the candidate official Ringzzle Web site repository. It is documentation-only and does not change gameplay, Hugo config, Cloudflare Pages settings, domain settings, content, theme files, analytics, ads, backend, or leaderboard behavior.
+This assessment covers the existing `ringzzle-blog` repository as the official Ringzzle Web site repository candidate before any rebuild decision. It is documentation-only and does not change gameplay, Hugo config, Cloudflare Pages settings, domain settings, content, theme files, analytics, ads, backend, or leaderboard behavior.
 
 Official working directory:
 
@@ -16,13 +16,13 @@ Official working directory:
 - Initial working tree state: clean
 - Remote: `git@github.com:bornstarsoft/ringzzle-blog.git`
 - Latest commits inspected:
+  - `fcaae45 Document Ringzzle web repo reuse and MVP plan`
   - `4400952 Updated changes`
   - `72d7e03 Auto post 2025-12-17 19:10:55`
-  - `ef2f2c7 Auto post 2025-12-16 22:04:05`
 
 ## Domain Connection Clues
 
-The repository appears partially connected to `ringzzle.com`, but it also has a domain mismatch that must be resolved later.
+The repository appears connected to the `ringzzle.com` production direction based on the user-confirmed Cloudflare Pages/GitHub connection and the local Hugo config. Do not disconnect GitHub, Cloudflare Pages, or `ringzzle.com` during the rebuild decision phase.
 
 - `config.toml` sets `baseURL = "https://ringzzle.com/"`.
 - `config.toml` sets the site title to `Ringzzle`.
@@ -30,7 +30,7 @@ The repository appears partially connected to `ringzzle.com`, but it also has a 
 - The root `CNAME` file currently contains `www.bornstarai.com`, not `ringzzle.com`.
 - No Cloudflare Pages project settings were changed or inspected externally in this phase.
 
-Assessment: the repo has strong local evidence that it is intended for `ringzzle.com`, but the tracked `CNAME` conflicts with that direction. Do not change the `CNAME` blindly; verify Cloudflare Pages custom-domain settings first in a later deployment phase.
+Assessment: treat the existing production connection as the source of truth for now. The tracked `CNAME` conflict is a source-level risk to investigate later, not a reason to disconnect production settings today. Verify Cloudflare Pages custom-domain settings before changing `CNAME` or deployment configuration.
 
 ## Structure Observed
 
@@ -42,6 +42,7 @@ Root files:
 - `LICENSE.md`
 - `gitignore`
 - `content/`
+- `Docs/`
 - `themes/`
 
 Hugo configuration:
@@ -54,6 +55,7 @@ Hugo configuration:
 Content structure:
 
 - Existing content is under `content/posts/`.
+- 138 tracked post files were present during this inspection.
 - Posts are dated from 2025-05-27 through 2025-12-17.
 - The content is a game and puzzle news/blog archive, not the Ringzzle Web game yet.
 
@@ -76,21 +78,48 @@ Cloudflare Pages-related files:
 
 Docs, scripts, and tests:
 
-- No root-level `Docs/` directory was present before this documentation phase.
+- A root-level `Docs/` directory now exists for Ringzzle Web planning.
 - No root-level `scripts/` or `tests/` directory was present.
 - No `package.json` was present in the site root.
 
+## Blockzzle Web Comparison
+
+Read-only reference inspected:
+
+`/Users/seongjinkim/BornStarSoft_Publishing/github_hugo/blockzzle-web`
+
+Blockzzle Web has already grown into a full web-game site structure:
+
+- `static/play/index.html`
+- Versioned assets such as `static/play/css/blockzzle.v026.css` and `static/play/js/blockzzle-phaser.v026.js`
+- A testable JS core covered by `tests/blockzzle_logic.test.cjs`
+- Mobile Safari viewport handling using `visualViewport`, fixed play-shell sizing, and safe-area CSS
+- Orientation relayout delays at `0`, `100`, `300`, and `600` milliseconds
+- A rotate-to-portrait overlay for cramped landscape phones
+- LocalStorage repeat-play stats and sound preference handling
+- Later-stage leaderboard/backend files under `functions/`, `migrations/`, and `wrangler.example.toml`
+
+Ringzzle should reuse Blockzzle's static `/play/`, versioned asset, testable-core, and mobile-layout lessons. Ringzzle should not copy Blockzzle's backend, leaderboard, Daily mode, Unity build assets, or gameplay rules for v001.
+
 ## Reuse Decision
 
-Yes, reuse `ringzzle-blog` as the official Ringzzle Web repo for now.
+Yes. `ringzzle-blog` is clean enough to reuse as the official Ringzzle Web repo for now.
 
 Reasons:
 
-- It is the existing connected repository for Ringzzle work.
+- It is the existing production-connected repository for Ringzzle work.
 - Its Hugo static-site structure is compatible with a lightweight HTML5 `/play/` game.
 - `config.toml` already points at `https://ringzzle.com/`.
+- The repo is lean: Hugo config, content archive, docs, and vendored theme.
+- It has no existing root-level app code, backend, D1, login, leaderboard, ads, analytics, IAP, or Daily Challenge implementation to unwind.
 - Keeping this repo avoids creating or wiring a new GitHub repository before the site direction is stable.
 - A static Phaser game can fit under Hugo `static/play/` without backend infrastructure.
+
+Current cleanliness caveats:
+
+- Existing blog posts are not Ringzzle Web product pages, so the homepage/content strategy must change later.
+- The root `CNAME` mismatch must be investigated before production deployment edits.
+- The vendored Ananke theme is acceptable for preservation, but v001 may need root-level layout overrides for a proper game homepage.
 
 ## Repo Name Decision
 
@@ -102,7 +131,44 @@ Reasons:
 - Renaming the repository could affect Cloudflare Pages Git integration, deployment history, and any production webhooks.
 - The project can use `Ringzzle Web` in docs, copy, titles, and user-facing content without renaming the GitHub repository yet.
 
-Recommended later action: consider a repository rename only after v001 is deployed, verified on production, and Cloudflare Pages settings are documented.
+Recommended later action: consider a repository rename to `ringzzle-web` only after v001 is deployed, verified on production, and Cloudflare Pages settings are documented. A later rename is reasonable for clarity, but it should be treated as an infrastructure change with rollback notes, not part of this assessment phase.
+
+## New Repo Decision
+
+Do not create a clean new repo now.
+
+The current repo is clean enough to evolve in place, and the risks of breaking the existing GitHub/Cloudflare Pages/ringzzle.com connection outweigh the benefits of starting fresh today.
+
+A clean new repo could become reasonable later only if one of these conditions appears:
+
+- Cloudflare Pages can be reconnected with a documented, tested rollback path.
+- The existing repo accumulates unrelated generated files, broken theme history, or content that blocks clean Ringzzle Web development.
+- A separate deployment preview proves the new repo can serve the same domain behavior without SEO, DNS, TLS, or build-setting surprises.
+- All production settings, branch settings, build commands, environment variables, custom domains, and rollback steps are documented first.
+
+If a new repo is ever recommended, preserve these before switching:
+
+- The existing `ringzzle-blog` Git history.
+- The production Cloudflare Pages project settings and custom-domain mapping.
+- The current GitHub remote/integration details.
+- `config.toml`, `CNAME`, `README.md`, `LICENSE.md`, `gitignore`, and all `Docs/`.
+- The full `content/posts/` archive.
+- Any DNS, TLS, Pages branch, build-command, and publish-directory settings.
+- A rollback plan that can restore the old repo connection quickly.
+
+## Disconnection Risks
+
+Disconnecting GitHub, Cloudflare Pages, or `ringzzle.com` now is high-risk and unnecessary.
+
+Risks include:
+
+- Production downtime or serving stale content at `ringzzle.com`.
+- Broken Cloudflare Pages Git deployment hooks.
+- Lost or undocumented build settings, branch settings, environment variables, or publish-directory configuration.
+- DNS/custom-domain and TLS certificate disruption.
+- Loss of easy rollback to the currently connected repo.
+- Search-index and canonical URL instability during the Ringzzle Web transition.
+- Confusion between the official repo and the abandoned `ringzzle-web` folder.
 
 ## Temporary Folder Decision
 
