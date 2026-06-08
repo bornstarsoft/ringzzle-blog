@@ -87,7 +87,7 @@ Important v003 correction: Ringzzle Web v001/v002 incorrectly used same color pl
 - No direct score increment was observed for this behavior in the inspected files.
 - Unity plays merge feedback and may award a coin through the shared coin-chance flow.
 
-Important web decision: Ringzzle Web may include a same-cell full-color bonus, but it should not automatically inherit the Unity global color clear unless that stronger behavior is explicitly selected after playtesting.
+Important v005 decision: Ringzzle Web now uses a same-cell color burst inspired by the Unity global color clear. When one cell completes small, medium, and large rings of the same color, all rings of that color on the board clear. Other colors are preserved.
 
 ### Scoring
 
@@ -100,6 +100,7 @@ Important web decision: Ringzzle Web may include a same-cell full-color bonus, b
 - Same-cell full-color global clears do not appear to add score directly in the inspected files.
 
 Important web decision: Ringzzle Web should use a clearer browser-friendly scoring model with visible placement, line clear, combo, and optional same-cell bonus points.
+v005 keeps the special color burst bonus at `+150` and avoids double-counting rings already cleared by line clears in the same move.
 
 ### Game Over
 
@@ -133,7 +134,10 @@ Use these rules for Ringzzle Web after the v003 core-rule correction:
 - Ring size is not part of line matching.
 - When a color line clears, remove matching-color rings in that line regardless of ring size.
 - Preserve nonmatching-color rings in the same involved cells.
-- Optional same-cell full-color bonus when small, medium, and large in one cell are the same color.
+- Same-cell color burst when small, medium, and large in one cell are the same color.
+- Color burst clears all rings of that color across the board.
+- Color burst preserves all other colors.
+- Overlapping line clears and color bursts clear the same ring once.
 - Score and high score.
 - High score saved in localStorage.
 - Restart.
@@ -142,6 +146,6 @@ Use these rules for Ringzzle Web after the v003 core-rule correction:
 
 ## Open Tuning Notes
 
-- The same-cell full-color bonus is currently local-only in web; decide later whether to test the stronger Unity-style global color clear.
+- Playtest whether the v005 color burst feels understandable and fairly rewarded at `+150`.
 - Tune web color progression thresholds after playtesting. The Unity template thresholds are `25`, `50`, `150`, `250`, and `500`, but web v003 uses a wider score scale for its placement and clear scoring.
 - Keep Unity template behavior as a rules reference, not a direct code source.
