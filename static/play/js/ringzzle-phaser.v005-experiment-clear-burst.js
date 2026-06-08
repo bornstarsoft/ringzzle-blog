@@ -44,6 +44,7 @@
     placement: 10,
     lineClear: 100,
     cellBonus: 150,
+    colorBurst: 150,
     multiClearBonus: 50,
   };
 
@@ -233,8 +234,9 @@
     const clearEvents = Math.max(0, Number.parseInt(move.clearEvents || 0, 10) || 0);
     const lineClears = Math.max(0, Number.parseInt(move.lineClears || 0, 10) || 0);
     const cellBonuses = Math.max(0, Number.parseInt(move.cellBonuses || 0, 10) || 0);
+    const colorBursts = Math.max(0, Number.parseInt(move.colorBursts || cellBonuses || 0, 10) || 0);
     if (clearEvents > 1) return `Combo clear +${scoreDelta}`;
-    if (cellBonuses > 0) return `Cell bonus +${scoreDelta}`;
+    if (colorBursts > 0) return `Color Burst +${scoreDelta}`;
     if (lineClears > 0) return `Line clear +${scoreDelta}`;
     return `Placed +${scoreDelta}`;
   }
@@ -459,7 +461,7 @@
     resolveClears() {
       const clearKeys = new Set();
       const lineEvents = [];
-      const cellEvents = [];
+      const colorBurstEvents = [];
 
       buildLines().forEach((line) => {
         const firstCell = line.cells[0];
@@ -467,7 +469,7 @@
         candidateColors.forEach((color) => {
           const matchesLine = line.cells.every(([x, y]) => cellHasColor(this.board[y][x], color, this.sizes));
           if (!matchesLine) return;
-          lineEvents.push({ type: "line", id: line.id, color });
+          lineEvents.push({ type: "line", id: line.id, color, cells: line.cells.map(([x, y]) => [x, y]) });
           line.cells.forEach(([x, y]) => addMatchingColorRings(this.board, x, y, color, this.sizes, clearKeys));
         });
       });
@@ -476,8 +478,13 @@
         for (let x = 0; x < this.width; x += 1) {
           const values = this.sizes.map((size) => this.board[y][x][size]);
           if (values.every((value) => value !== null) && values.every((value) => value === values[0])) {
-            cellEvents.push({ type: "cell", id: `cell-${x}-${y}`, color: values[0], x, y });
-            this.sizes.forEach((size) => clearKeys.add(ringKey(x, y, size)));
+            const color = values[0];
+            colorBurstEvents.push({ type: "color-burst", id: `color-burst-${x}-${y}`, color, x, y, cells: [{ x, y }] });
+            for (let boardY = 0; boardY < this.height; boardY += 1) {
+              for (let boardX = 0; boardX < this.width; boardX += 1) {
+                addMatchingColorRings(this.board, boardX, boardY, color, this.sizes, clearKeys);
+              }
+            }
           }
         }
       }
@@ -489,13 +496,15 @@
 
       return {
         lineClears: lineEvents.length,
-        cellBonuses: cellEvents.length,
-        clearEvents: lineEvents.length + cellEvents.length,
+        colorBursts: colorBurstEvents.length,
+        cellBonuses: colorBurstEvents.length,
+        clearEvents: lineEvents.length + colorBurstEvents.length,
         clearedRings: rings.length,
         rings,
         cells: uniqueCellsFromRings(rings),
         lineEvents,
-        cellEvents,
+        colorBurstEvents,
+        cellEvents: colorBurstEvents,
       };
     }
 
@@ -513,7 +522,7 @@
       const clearResult = this.resolveClears();
       const scoreDelta = SCORE.placement
         + clearResult.lineClears * SCORE.lineClear
-        + clearResult.cellBonuses * SCORE.cellBonus
+        + clearResult.colorBursts * SCORE.colorBurst
         + getScoreForMove(clearResult.clearEvents);
 
       this.score += scoreDelta;
@@ -592,6 +601,7 @@
       this.clearFlashCells = [];
       this.invalidFlashCell = null;
       this.scorePopItems = [];
+      this.moveEffectItems = [];
       this.trayOrigins = [];
       this.resizeFrame = 0;
       this.resizeTimers = [];
@@ -791,7 +801,9 @@
       this.clearFlashCells = [];
       this.invalidFlashCell = null;
       this.previewCell = null;
+      this.clearMoveEffects();
       this.clearScorePops();
+      this.publishMoveEffectMetrics(null);
       this.statusText.setText("");
       this.gameModel.restart();
       this.render();
@@ -818,6 +830,12 @@
       const doc = document.documentElement;
       doc.dataset.ringzzleScore = String(this.gameModel.score);
       doc.dataset.ringzzleTrayActive = this.gameModel.tray.map((piece) => (piece ? "1" : "0")).join("");
+      doc.dataset.ringzzleTrayPieces = this.gameModel.tray
+        .map((piece) => (piece ? `${piece.size}:${piece.color}` : "empty"))
+        .join("|");
+      doc.dataset.ringzzleBoardState = this.gameModel.board
+        .map((row) => row.map((cell) => this.gameModel.sizes.map((size) => (cell[size] === null ? "-" : cell[size])).join("")).join("/"))
+        .join("|");
       doc.dataset.ringzzleGameOver = String(this.gameModel.gameOver);
       doc.dataset.ringzzleColorCount = String(this.gameModel.availableColorCount);
       doc.dataset.ringzzleClientVersion = CLIENT_VERSION;
@@ -854,20 +872,15 @@
       const cellSize = layout.cellSize;
       const pad = Math.max(5, Math.floor(cellSize * 0.04));
       const radius = Math.max(8, Math.floor(cellSize * 0.08));
-      const panelPad = Math.max(10, Math.floor(cellSize * 0.075));
-      const panelRadius = Math.max(16, Math.floor(cellSize * 0.12));
-      const panelX = origin.x - panelPad;
-      const panelY = origin.y - panelPad;
-      const panelSize = boardSize + panelPad * 2;
 
-      g.fillStyle(0x03100d, 0.36);
-      g.fillRoundedRect(panelX - 2, panelY + 8, panelSize + 4, panelSize + 7, panelRadius + 2);
-      g.fillStyle(0x10281f, 0.9);
-      g.fillRoundedRect(panelX, panelY, panelSize, panelSize, panelRadius);
+      g.fillStyle(0x07130f, 0.46);
+      g.fillRoundedRect(origin.x - 17, origin.y - 14, boardSize + 34, boardSize + 34, 16);
       g.lineStyle(2, 0x38d982, 0.26);
-      g.strokeRoundedRect(panelX, panelY, panelSize, panelSize, panelRadius);
-      g.lineStyle(1, 0xffffff, 0.08);
-      g.strokeRoundedRect(panelX + 4, panelY + 4, panelSize - 8, panelSize - 8, panelRadius - 4);
+      g.strokeRoundedRect(origin.x - 17, origin.y - 14, boardSize + 34, boardSize + 34, 16);
+      g.fillStyle(0x173628, 0.54);
+      g.fillRoundedRect(origin.x - 8, origin.y - 7, boardSize + 16, boardSize + 16, 12);
+      g.lineStyle(1.5, 0xffffff, 0.12);
+      g.strokeRoundedRect(origin.x - 8, origin.y - 7, boardSize + 16, boardSize + 16, 12);
 
       for (let y = 0; y < BOARD_SIZE; y += 1) {
         for (let x = 0; x < BOARD_SIZE; x += 1) {
@@ -883,11 +896,11 @@
             : isInvalid
               ? 0xff5a5f
             : 0xeefaf0;
-          const alpha = isPreview ? (this.previewCell.valid ? 0.28 : 0.34) : isInvalid ? 0.22 : 0.085;
+          const alpha = isPreview ? (this.previewCell.valid ? 0.28 : 0.34) : isInvalid ? 0.22 : 0.075;
           g.fillStyle(fill, alpha);
           g.fillRoundedRect(cellX + pad, cellY + pad, cellSize - pad * 2, cellSize - pad * 2, radius);
           const strokeColor = isFlash ? 0xf2c94c : isInvalid ? 0xff5a5f : isPreview ? fill : 0xffffff;
-          const strokeAlpha = isFlash ? 0.9 : isInvalid ? 0.86 : isPreview ? 0.78 : 0.13;
+          const strokeAlpha = isFlash ? 0.9 : isInvalid ? 0.86 : isPreview ? 0.78 : 0.16;
           const strokeWidth = isFlash || isInvalid || isPreview ? 3 : 1.5;
           g.lineStyle(strokeWidth, strokeColor, strokeAlpha);
           g.strokeRoundedRect(cellX + pad, cellY + pad, cellSize - pad * 2, cellSize - pad * 2, radius);
@@ -929,22 +942,19 @@
       this.trayOrigins = [];
       const totalWidth = layout.slotWidth * TRAY_SIZE + layout.slotGap * (TRAY_SIZE - 1);
       const startX = (layout.width - totalWidth) / 2;
-      const rackPadX = Math.max(10, Math.floor(layout.slotWidth * 0.11));
-      const rackPadY = Math.max(7, Math.floor(layout.trayHeight * 0.08));
-      const rackRadius = Math.max(16, Math.floor(layout.trayHeight * 0.18));
-      const rackX = startX - rackPadX;
-      const rackY = layout.trayY - rackPadY;
-      const rackWidth = totalWidth + rackPadX * 2;
-      const rackHeight = layout.trayHeight + rackPadY * 2;
+      const rackPadX = layout.compact ? 8 : 12;
+      const rackY = layout.trayY + 4;
+      const rackHeight = layout.trayHeight - 3;
 
-      g.fillStyle(0x03100d, 0.25);
-      g.fillRoundedRect(rackX - 2, rackY + 5, rackWidth + 4, rackHeight + 5, rackRadius + 2);
-      g.fillStyle(0x1f2618, 0.72);
-      g.fillRoundedRect(rackX, rackY, rackWidth, rackHeight, rackRadius);
-      g.lineStyle(2, 0xf2c94c, 0.18);
-      g.strokeRoundedRect(rackX, rackY, rackWidth, rackHeight, rackRadius);
-      g.lineStyle(1, 0xffffff, 0.07);
-      g.strokeRoundedRect(rackX + 4, rackY + 4, rackWidth - 8, rackHeight - 8, rackRadius - 4);
+      g.fillStyle(0x07130f, 0.48);
+      g.fillRoundedRect(startX - rackPadX, rackY, totalWidth + rackPadX * 2, rackHeight, 12);
+      g.lineStyle(2, 0xf2c94c, 0.2);
+      g.strokeRoundedRect(startX - rackPadX, rackY, totalWidth + rackPadX * 2, rackHeight, 12);
+      g.lineStyle(2, 0xffffff, 0.08);
+      g.beginPath();
+      g.moveTo(startX + 8, rackY + 10);
+      g.lineTo(startX + totalWidth - 8, rackY + 10);
+      g.strokePath();
 
       for (let index = 0; index < TRAY_SIZE; index += 1) {
         const center = this.getTraySlotCenter(index);
@@ -954,18 +964,17 @@
         const piece = this.gameModel.tray[index];
         const isDragging = this.dragState && this.dragState.slotIndex === index;
         const filled = piece && !isDragging && !this.gameModel.gameOver;
-        const visualInsetX = Math.max(7, Math.floor(layout.slotWidth * 0.09));
-        const visualInsetY = Math.max(9, Math.floor(layout.trayHeight * 0.15));
+        const visualInsetX = Math.max(6, Math.floor(layout.slotWidth * 0.08));
+        const visualInsetY = Math.max(8, Math.floor(layout.trayHeight * 0.13));
         const visualX = x + visualInsetX;
         const visualY = y + visualInsetY;
         const visualWidth = layout.slotWidth - visualInsetX * 2;
         const visualHeight = layout.trayHeight - visualInsetY * 2;
-        const visualRadius = Math.floor(Math.min(visualWidth, visualHeight) * 0.5);
 
-        g.fillStyle(0xf8fff9, filled ? 0.13 : 0.045);
-        g.fillRoundedRect(visualX, visualY, visualWidth, visualHeight, visualRadius);
-        g.lineStyle(1.5, filled ? 0xf2c94c : 0xffffff, filled ? 0.26 : 0.08);
-        g.strokeRoundedRect(visualX, visualY, visualWidth, visualHeight, visualRadius);
+        g.fillStyle(0xf8fff9, filled ? 0.14 : 0.045);
+        g.fillRoundedRect(visualX, visualY, visualWidth, visualHeight, 999);
+        g.lineStyle(1.5, filled ? 0xf2c94c : 0xffffff, filled ? 0.24 : 0.08);
+        g.strokeRoundedRect(visualX, visualY, visualWidth, visualHeight, 999);
 
         if (piece && !isDragging) {
           const cellSize = layout.trayPieceSize * 1.35;
@@ -1055,6 +1064,9 @@
       this.invalidFlashCell = null;
       this.statusText.setText(getMoveFeedbackLabel(result, this.gameModel.gameOver));
       this.render();
+      this.publishMoveEffectMetrics(result);
+      this.playLineClearEffects(result);
+      this.playColorBurstEffects(result);
       this.playScorePop(result, state);
       if (this.clearFlashCells.length) {
         this.time.delayedCall(420, () => {
@@ -1084,6 +1096,116 @@
     clearScorePops() {
       this.scorePopItems.forEach((item) => item.destroy());
       this.scorePopItems = [];
+    }
+
+    clearMoveEffects() {
+      this.moveEffectItems.forEach((item) => item.destroy());
+      this.moveEffectItems = [];
+    }
+
+    publishMoveEffectMetrics(result) {
+      if (typeof document === "undefined") return;
+      const doc = document.documentElement;
+      const lineEvents = (result && result.lineEvents) || [];
+      const colorBurstEvents = (result && result.colorBurstEvents) || [];
+      doc.dataset.ringzzleLastLineEffectCount = String(lineEvents.length);
+      doc.dataset.ringzzleLastLineEffectColors = lineEvents.map((event) => String(event.color)).join(",");
+      doc.dataset.ringzzleLastColorBurstCount = String(colorBurstEvents.length);
+      doc.dataset.ringzzleLastColorBurstColors = colorBurstEvents.map((event) => String(event.color)).join(",");
+    }
+
+    getBoardCellCenter(x, y) {
+      const cellSize = this.layout.cellSize;
+      return {
+        x: this.layout.boardOrigin.x + (x + 0.5) * cellSize,
+        y: this.layout.boardOrigin.y + (y + 0.5) * cellSize,
+      };
+    }
+
+    playLineClearEffects(result) {
+      const events = (result && result.lineEvents) || [];
+      if (!events.length || !this.layout || !this.feedbackLayer) return;
+      const beam = this.add.graphics();
+      const cellSize = this.layout.cellSize;
+      events.forEach((event) => {
+        const cells = event.cells || [];
+        if (cells.length < 2) return;
+        const [startX, startY] = cells[0];
+        const [endX, endY] = cells[cells.length - 1];
+        const start = this.getBoardCellCenter(startX, startY);
+        const end = this.getBoardCellCenter(endX, endY);
+        const color = hexToNumber(COLORS[event.color % COLORS.length]);
+        beam.lineStyle(Math.max(18, cellSize * 0.16), 0x07130f, 0.38);
+        beam.beginPath();
+        beam.moveTo(start.x, start.y);
+        beam.lineTo(end.x, end.y);
+        beam.strokePath();
+        beam.lineStyle(Math.max(10, cellSize * 0.095), color, 0.92);
+        beam.beginPath();
+        beam.moveTo(start.x, start.y);
+        beam.lineTo(end.x, end.y);
+        beam.strokePath();
+        beam.lineStyle(Math.max(3, cellSize * 0.026), 0xffffff, 0.58);
+        beam.beginPath();
+        beam.moveTo(start.x, start.y);
+        beam.lineTo(end.x, end.y);
+        beam.strokePath();
+      });
+      this.feedbackLayer.add(beam);
+      this.moveEffectItems.push(beam);
+      this.tweens.add({
+        targets: beam,
+        alpha: 0,
+        duration: 620,
+        ease: "Sine.easeOut",
+        onComplete: () => {
+          beam.destroy();
+          this.moveEffectItems = this.moveEffectItems.filter((item) => item !== beam);
+        },
+      });
+    }
+
+    playColorBurstEffects(result) {
+      const events = (result && result.colorBurstEvents) || [];
+      if (!events.length || !this.layout || !this.feedbackLayer) return;
+      const cellSize = this.layout.cellSize;
+      const graphics = this.add.graphics();
+      const labels = [];
+      events.forEach((event) => {
+        const color = hexToNumber(COLORS[event.color % COLORS.length]);
+        const sourceCells = event.cells && event.cells.length ? event.cells : [{ x: event.x, y: event.y }];
+        sourceCells.forEach((cell) => {
+          const center = this.getBoardCellCenter(cell.x, cell.y);
+          graphics.fillStyle(color, 0.12);
+          graphics.fillCircle(center.x, center.y, cellSize * 0.5);
+          [0.32, 0.5, 0.68].forEach((scale, index) => {
+            graphics.lineStyle(Math.max(3, cellSize * (0.035 - index * 0.004)), index === 1 ? 0xffffff : color, index === 1 ? 0.58 : 0.82);
+            graphics.strokeCircle(center.x, center.y, cellSize * scale);
+          });
+          const label = this.add.text(
+            center.x,
+            center.y - cellSize * 0.78,
+            "Color Burst",
+            this.textStyle(15, COLORS[event.color % COLORS.length], "900", "center")
+          );
+          label.setOrigin(0.5, 0.5);
+          labels.push(label);
+        });
+      });
+      this.feedbackLayer.add(graphics);
+      labels.forEach((label) => this.feedbackLayer.add(label));
+      this.moveEffectItems.push(graphics, ...labels);
+      this.tweens.add({
+        targets: [graphics, ...labels],
+        alpha: 0,
+        y: "-=18",
+        duration: 780,
+        ease: "Sine.easeOut",
+        onComplete: () => {
+          [graphics, ...labels].forEach((item) => item.destroy());
+          this.moveEffectItems = this.moveEffectItems.filter((item) => [graphics, ...labels].indexOf(item) === -1);
+        },
+      });
     }
 
     playScorePop(result, state) {
