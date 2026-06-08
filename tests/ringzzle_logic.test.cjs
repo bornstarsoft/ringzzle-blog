@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v001.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v002.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -230,10 +230,32 @@ test("keeps the board and bottom tray inside target iPhone portrait viewports", 
     const statusBottom = layout.statusY + layout.statusHeight;
 
     assert.ok(layout.boardSize >= 300, `board should stay playable at ${viewport.width}x${viewport.height}`);
+    assert.ok(layout.bottomGap >= 20, `bottom reserve should be Safari-safe at ${viewport.width}x${viewport.height}`);
     assert.ok(boardBottom < layout.trayY, `tray should sit below board at ${viewport.width}x${viewport.height}`);
     assert.ok(trayBottom <= viewport.height - layout.bottomGap, `tray should fit at ${viewport.width}x${viewport.height}`);
     assert.ok(statusBottom <= viewport.height, `status should fit at ${viewport.width}x${viewport.height}`);
   });
+});
+
+test("formats v002 move feedback for placement, clears, combo, cell bonus, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v002");
+  assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
+  assert.strictEqual(
+    RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),
+    "Line clear +110"
+  );
+  assert.strictEqual(
+    RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 260, clearEvents: 2, lineClears: 2, cellBonuses: 0 }),
+    "Combo clear +260"
+  );
+  assert.strictEqual(
+    RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 160, clearEvents: 1, lineClears: 0, cellBonuses: 1 }),
+    "Cell bonus +160"
+  );
+  assert.strictEqual(
+    RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }, true),
+    "Game over."
+  );
 });
 
 let passed = 0;
