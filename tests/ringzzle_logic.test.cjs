@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v008.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v009.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -384,8 +384,41 @@ test("uses compact mobile layout reserves for reduced-height iPhone Safari viewp
   });
 });
 
-test("formats v008 move feedback for placement, clears, combo, cell bonus, and game over", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v008");
+test("keeps compact subtitle clear of score panels on narrow iPhone Safari", () => {
+  [
+    { width: 390, height: 844 },
+    { width: 390, height: 720 },
+    { width: 393, height: 735 },
+    { width: 430, height: 780 },
+  ].forEach((viewport) => {
+    const layout = RingzzleCore.calculateLayoutMetrics(viewport.width, viewport.height);
+    const header = RingzzleCore.calculateHeaderMetrics(layout);
+
+    assert.ok(header.subtitleBottom + 8 <= header.chipTop, `subtitle should clear score chips at ${viewport.width}x${viewport.height}`);
+    assert.ok(header.chipBottom <= layout.boardOrigin.y - 10, `score chips should clear board at ${viewport.width}x${viewport.height}`);
+  });
+});
+
+test("keeps drawn board frame and tray rack visually separated on mobile", () => {
+  [
+    { width: 390, height: 844 },
+    { width: 393, height: 852 },
+    { width: 430, height: 932 },
+    { width: 390, height: 720 },
+    { width: 393, height: 735 },
+    { width: 430, height: 780 },
+  ].forEach((viewport) => {
+    const layout = RingzzleCore.calculateLayoutMetrics(viewport.width, viewport.height);
+    const visualGap = RingzzleCore.getBoardTrayVisualGap(layout);
+    const trayBottom = layout.trayY + layout.trayHeight;
+
+    assert.ok(visualGap >= 6, `drawn board/tray gap should be visible at ${viewport.width}x${viewport.height}`);
+    assert.ok(trayBottom <= viewport.height - layout.bottomGap, `tray should remain above Safari reserve at ${viewport.width}x${viewport.height}`);
+  });
+});
+
+test("formats v009 move feedback for placement, clears, combo, cell bonus, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v009");
   assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),
