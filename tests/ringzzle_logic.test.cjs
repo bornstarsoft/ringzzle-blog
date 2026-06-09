@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v017.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v018.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -486,6 +486,31 @@ test("keeps drawn board frame and tray rack visually separated on mobile", () =>
   });
 });
 
+test("keeps status message away from board and tray rings on mobile", () => {
+  [
+    { width: 390, height: 844 },
+    { width: 393, height: 852 },
+    { width: 430, height: 932 },
+    { width: 390, height: 720 },
+    { width: 393, height: 735 },
+    { width: 430, height: 780 },
+  ].forEach((viewport) => {
+    const layout = RingzzleCore.calculateLayoutMetrics(viewport.width, viewport.height);
+    const header = RingzzleCore.calculateHeaderMetrics(layout);
+    const panelPad = Math.max(12, Math.floor(layout.cellSize * 0.085));
+    const statusBottom = layout.statusY + layout.statusHeight;
+    const boardPanelTop = layout.boardOrigin.y - panelPad;
+    const trayMetrics = RingzzleCore.calculateTrayRingRenderMetrics(layout);
+    const trayRingTop = layout.trayY + layout.trayHeight / 2 - trayMetrics.largestRingDiameter / 2;
+    const trayBottom = layout.trayY + layout.trayHeight;
+
+    assert.ok(layout.statusY >= header.chipBottom, `status should sit below score chips at ${viewport.width}x${viewport.height}`);
+    assert.ok(statusBottom <= boardPanelTop, `status should not overlap board panel at ${viewport.width}x${viewport.height}`);
+    assert.ok(statusBottom < trayRingTop, `status should clear tray rings at ${viewport.width}x${viewport.height}`);
+    assert.ok(trayBottom <= viewport.height - layout.bottomGap, `tray should stay above Safari reserve at ${viewport.width}x${viewport.height}`);
+  });
+});
+
 test("tracks drag ghost cleanup transitions defensively", () => {
   let drag = RingzzleCore.resolveDragCleanupState(null, { type: "start", ghostId: "ghost-a" });
   assert.deepStrictEqual(drag.cleanupGhostIds, []);
@@ -587,7 +612,7 @@ test("keeps sound off by default and requires an explicit user toggle", () => {
   assert.strictEqual(reloadState.userActivated, false);
 });
 
-test("recognizes only lightweight v017 sound event names", () => {
+test("recognizes only lightweight v018 sound event names", () => {
   ["place", "invalid", "line-clear", "color-burst", "game-over", "restart", "toggle-on", "toggle-off"].forEach((eventName) => {
     const cue = RingzzleCore.getSoundCueSpec(eventName);
     assert.strictEqual(cue.name, eventName);
@@ -649,8 +674,8 @@ test("hides tray rack and wells without removing tray hit areas", () => {
   assert.strictEqual(RingzzleCore.TRAY_VISUAL_STYLE.keepHitAreas, true);
 });
 
-test("formats v017 move feedback for placement, clears, combo, Color Burst, and game over", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v017");
+test("formats v018 move feedback for placement, clears, combo, Color Burst, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v018");
   assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),
