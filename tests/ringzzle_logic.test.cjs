@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v009.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v010.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -399,6 +399,23 @@ test("keeps compact subtitle clear of score panels on narrow iPhone Safari", () 
   });
 });
 
+test("keeps extra breathing room between score panels and board on mobile", () => {
+  [
+    { width: 390, height: 844 },
+    { width: 393, height: 852 },
+    { width: 430, height: 932 },
+    { width: 390, height: 720 },
+    { width: 393, height: 735 },
+    { width: 430, height: 780 },
+  ].forEach((viewport) => {
+    const layout = RingzzleCore.calculateLayoutMetrics(viewport.width, viewport.height);
+    const header = RingzzleCore.calculateHeaderMetrics(layout);
+
+    assert.ok(layout.boardOrigin.y - header.chipBottom >= 28, `score-to-board gap should breathe at ${viewport.width}x${viewport.height}`);
+    assert.ok(layout.boardSize >= 300, `board should remain playable at ${viewport.width}x${viewport.height}`);
+  });
+});
+
 test("keeps drawn board frame and tray rack visually separated on mobile", () => {
   [
     { width: 390, height: 844 },
@@ -417,8 +434,34 @@ test("keeps drawn board frame and tray rack visually separated on mobile", () =>
   });
 });
 
-test("formats v009 move feedback for placement, clears, combo, cell bonus, and game over", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v009");
+test("tracks drag ghost cleanup transitions defensively", () => {
+  let drag = RingzzleCore.resolveDragCleanupState(null, { type: "start", ghostId: "ghost-a" });
+  assert.deepStrictEqual(drag.cleanupGhostIds, []);
+  assert.strictEqual(drag.state.activeGhostId, "ghost-a");
+  assert.strictEqual(drag.state.returning, false);
+
+  drag = RingzzleCore.resolveDragCleanupState(drag.state, { type: "return", tweenId: "tween-a" });
+  assert.strictEqual(drag.state.returning, true);
+  assert.strictEqual(drag.state.returnTweenId, "tween-a");
+
+  drag = RingzzleCore.resolveDragCleanupState(drag.state, { type: "start", ghostId: "ghost-b" });
+  assert.deepStrictEqual(drag.cleanupGhostIds, ["ghost-a"]);
+  assert.deepStrictEqual(drag.cleanupTweenIds, ["tween-a"]);
+  assert.strictEqual(drag.state.activeGhostId, "ghost-b");
+  assert.strictEqual(drag.state.returning, false);
+
+  drag = RingzzleCore.resolveDragCleanupState(drag.state, { type: "valid-drop" });
+  assert.deepStrictEqual(drag.cleanupGhostIds, ["ghost-b"]);
+  assert.strictEqual(drag.state.activeGhostId, null);
+
+  drag = RingzzleCore.resolveDragCleanupState({ activeGhostId: "ghost-c", returning: true, returnTweenId: "tween-c" }, { type: "cancel" });
+  assert.deepStrictEqual(drag.cleanupGhostIds, ["ghost-c"]);
+  assert.deepStrictEqual(drag.cleanupTweenIds, ["tween-c"]);
+  assert.strictEqual(drag.state.returning, false);
+});
+
+test("formats v010 move feedback for placement, clears, combo, cell bonus, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v010");
   assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),
