@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v005.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v006.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -336,8 +336,8 @@ test("keeps the board and bottom tray inside target iPhone portrait viewports", 
   });
 });
 
-test("formats v005 move feedback for placement, clears, combo, cell bonus, and game over", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v005");
+test("formats v006 move feedback for placement, clears, combo, cell bonus, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v006");
   assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),
