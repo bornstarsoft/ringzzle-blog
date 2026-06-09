@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v016.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v017.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -33,6 +33,15 @@ function makeGame(options = {}) {
   });
 }
 
+function sequenceRng(values) {
+  let index = 0;
+  return () => {
+    const value = values[index % values.length];
+    index += 1;
+    return value;
+  };
+}
+
 const tests = [];
 
 function test(name, fn) {
@@ -49,7 +58,8 @@ test("starts with a 3x3 board and three single-ring tray pieces", () => {
   assert.strictEqual(game.board.length, 3);
   assert.strictEqual(game.board[0].length, 3);
   assert.deepStrictEqual(game.board[0][0], { small: null, medium: null, large: null });
-  assert.deepStrictEqual(game.tray.map((trayPiece) => trayPiece.size), ["small", "medium", "large"]);
+  assert.ok(game.tray.every((trayPiece) => RingzzleCore.SIZES.includes(trayPiece.size)));
+  assert.ok(game.tray.every((trayPiece) => trayPiece.color < RingzzleCore.START_COLOR_COUNT));
 });
 
 test("places a tray ring into an empty matching size slot and disables the tray slot", () => {
@@ -338,6 +348,13 @@ test("tray generation respects current available color count", () => {
   assert.ok(game.tray.every((trayPiece) => trayPiece.color < 6));
 });
 
+test("tray slot index does not force small medium large size order", () => {
+  const game = makeGame({ rng: sequenceRng([0.84, 0.1, 0.42, 0.2, 0.02, 0.3]) });
+
+  assert.deepStrictEqual(game.tray.map((trayPiece) => trayPiece.size), ["large", "medium", "small"]);
+  assert.notDeepStrictEqual(game.tray.map((trayPiece) => trayPiece.size), ["small", "medium", "large"]);
+});
+
 test("exposes mobile layout helpers for portrait overlay and drag placement", () => {
   assert.deepStrictEqual(RingzzleCore.ORIENTATION_RECOVERY_DELAYS, [0, 100, 300, 600]);
   assert.strictEqual(RingzzleCore.shouldShowPortraitPrompt({ width: 844, height: 390 }), true);
@@ -570,7 +587,7 @@ test("keeps sound off by default and requires an explicit user toggle", () => {
   assert.strictEqual(reloadState.userActivated, false);
 });
 
-test("recognizes only lightweight v016 sound event names", () => {
+test("recognizes only lightweight v017 sound event names", () => {
   ["place", "invalid", "line-clear", "color-burst", "game-over", "restart", "toggle-on", "toggle-off"].forEach((eventName) => {
     const cue = RingzzleCore.getSoundCueSpec(eventName);
     assert.strictEqual(cue.name, eventName);
@@ -594,7 +611,7 @@ test("makes Color Burst sound distinct without enabling sound by default", () =>
   assert.notStrictEqual(colorBurst.frequency, lineClear.frequency);
 });
 
-test("keeps full-scale tray rings inside target mobile tray bounds", () => {
+test("matches tray drag and board ring render sizes on target mobile layouts", () => {
   [
     [390, 844],
     [393, 852],
@@ -606,11 +623,23 @@ test("keeps full-scale tray rings inside target mobile tray bounds", () => {
     const layout = RingzzleCore.calculateLayoutMetrics(width, height);
     const metrics = RingzzleCore.calculateTrayRingRenderMetrics(layout);
 
-    assert.strictEqual(metrics.ringScale, 1, `${width}x${height} idle tray ring scale should be full size`);
-    assert.strictEqual(metrics.dragRingScale, metrics.ringScale, `${width}x${height} drag scale should match idle scale`);
-    assert.strictEqual(metrics.dragRingCellSize, metrics.ringCellSize, `${width}x${height} drag ring should not jump in size`);
-    assert.ok(metrics.largestRingDiameter < metrics.hitBoxSize, `${width}x${height} largest ring should fit inside tray hit bounds`);
-    assert.ok(metrics.margin >= 4, `${width}x${height} largest ring should keep comfortable well margin`);
+    assert.strictEqual(metrics.boardRingCellSize, layout.cellSize, `${width}x${height} board render size should use cell size`);
+    assert.strictEqual(metrics.ringCellSize, metrics.boardRingCellSize, `${width}x${height} tray ring should match board ring size`);
+    assert.strictEqual(metrics.dragRingCellSize, metrics.boardRingCellSize, `${width}x${height} drag ring should match board ring size`);
+    RingzzleCore.SIZES.forEach((sizeName) => {
+      assert.strictEqual(
+        metrics.radiusBySize[sizeName].tray,
+        metrics.radiusBySize[sizeName].board,
+        `${width}x${height} tray ${sizeName} radius should match board`
+      );
+      assert.strictEqual(
+        metrics.radiusBySize[sizeName].drag,
+        metrics.radiusBySize[sizeName].board,
+        `${width}x${height} drag ${sizeName} radius should match board`
+      );
+    });
+    assert.ok(metrics.largestRingDiameter <= metrics.slotWidth, `${width}x${height} largest ring should fit tray slot width`);
+    assert.ok(metrics.largestRingDiameter <= metrics.trayHeight + 22, `${width}x${height} largest ring should stay near tray band`);
   });
 });
 
@@ -620,8 +649,8 @@ test("hides tray rack and wells without removing tray hit areas", () => {
   assert.strictEqual(RingzzleCore.TRAY_VISUAL_STYLE.keepHitAreas, true);
 });
 
-test("formats v016 move feedback for placement, clears, combo, Color Burst, and game over", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v016");
+test("formats v017 move feedback for placement, clears, combo, Color Burst, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v017");
   assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),
