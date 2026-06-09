@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v019.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v022.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -610,7 +610,7 @@ test("keeps sound off by default and requires an explicit user toggle", () => {
   assert.strictEqual(reloadState.userActivated, false);
 });
 
-test("recognizes only lightweight v019 sound event names", () => {
+test("recognizes only lightweight v022 sound event names", () => {
   ["place", "invalid", "line-clear", "color-burst", "game-over", "restart", "toggle-on", "toggle-off"].forEach((eventName) => {
     const cue = RingzzleCore.getSoundCueSpec(eventName);
     assert.strictEqual(cue.name, eventName);
@@ -672,8 +672,8 @@ test("hides tray rack and wells without removing tray hit areas", () => {
   assert.strictEqual(RingzzleCore.TRAY_VISUAL_STYLE.keepHitAreas, true);
 });
 
-test("formats v019 move feedback for placement, clears, combo, Color Burst, and game over", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v019");
+test("formats v022 move feedback for placement, clears, combo, Color Burst, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v022");
   assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),
@@ -957,6 +957,80 @@ test("rejects unsafe Ringzzle leaderboard submit requests", async () => {
   assert.strictEqual(badPayload.status, 400);
   assert.strictEqual(badPayloadData.ok, false);
   assert.ok(!Object.prototype.hasOwnProperty.call(badPayloadData, "browserPlayerId"));
+});
+
+test("creates and reuses anonymous browser player ids locally", () => {
+  const storage = memoryStorage();
+  const first = RingzzleCore.getOrCreateBrowserPlayerId(storage, () => 0.12345);
+  const second = RingzzleCore.getOrCreateBrowserPlayerId(storage, () => 0.98765);
+
+  assert.match(first, /^ringzzle_[a-z0-9_]{12,}$/);
+  assert.strictEqual(second, first);
+  assert.strictEqual(storage.dump().ringzzleBrowserPlayerIdV1, first);
+});
+
+test("validates leaderboard nicknames on the client without server coupling", () => {
+  const valid = RingzzleCore.validateLeaderboardNicknameClient("  Ring   Master ");
+  assert.strictEqual(valid.ok, true);
+  assert.strictEqual(valid.nickname, "Ring Master");
+
+  assert.strictEqual(RingzzleCore.validateLeaderboardNicknameClient("").ok, false);
+  assert.strictEqual(RingzzleCore.validateLeaderboardNicknameClient("A").ok, false);
+  assert.strictEqual(RingzzleCore.validateLeaderboardNicknameClient("ThisNameIsWayTooLong").ok, false);
+  assert.strictEqual(RingzzleCore.validateLeaderboardNicknameClient("bad!").ok, false);
+});
+
+test("builds anonymous leaderboard submit payload from completed game state", () => {
+  const storage = memoryStorage({ ringzzleGamesPlayedV1: 4 });
+  const game = makeGame({ storage });
+  game.score = 1230;
+  game.bestClearThisGame = 2;
+  game.totalLineClearsThisGame = 8;
+  game.totalColorBurstsThisGame = 1;
+  game.availableColorCount = 5;
+  game.stats = { gamesPlayed: 5 };
+
+  const payload = RingzzleCore.buildLeaderboardSubmitPayload({
+    game,
+    nickname: "Nova",
+    browserPlayerId: "browser-secret",
+  });
+
+  assert.deepStrictEqual(payload, {
+    nickname: "Nova",
+    score: 1230,
+    browserPlayerId: "browser-secret",
+    clientVersion: "v022",
+    bestClear: 2,
+    lineClears: 8,
+    colorBursts: 1,
+    maxUnlockedColors: 5,
+    gamesPlayed: 5,
+  });
+});
+
+test("guards leaderboard submit state against duplicate taps and auto-submit", () => {
+  assert.strictEqual(RingzzleCore.LEADERBOARD_AUTO_SUBMIT, false);
+
+  let state = RingzzleCore.resolveLeaderboardSubmitState(null, { type: "game-over" });
+  assert.strictEqual(state.canSubmit, true);
+  assert.strictEqual(state.submitting, false);
+
+  state = RingzzleCore.resolveLeaderboardSubmitState(state, { type: "submit-start" });
+  assert.strictEqual(state.canSubmit, false);
+  assert.strictEqual(state.submitting, true);
+
+  const duplicate = RingzzleCore.resolveLeaderboardSubmitState(state, { type: "submit-start" });
+  assert.strictEqual(duplicate.canSubmit, false);
+  assert.strictEqual(duplicate.submitting, true);
+
+  state = RingzzleCore.resolveLeaderboardSubmitState(state, { type: "submit-success" });
+  assert.strictEqual(state.canSubmit, false);
+  assert.strictEqual(state.submitted, true);
+
+  state = RingzzleCore.resolveLeaderboardSubmitState(state, { type: "restart" });
+  assert.strictEqual(state.canSubmit, false);
+  assert.strictEqual(state.submitted, false);
 });
 
 (async () => {

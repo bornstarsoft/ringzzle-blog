@@ -1,6 +1,6 @@
 # Ringzzle Web v019 Leaderboard Architecture Plan
 
-Status: updated after v21 submit API implementation. v020 adds a D1 migration, read-only Cloudflare Pages Function, and read-only `/leaderboard/` page. v21 adds the submit API only. Nickname UI, game-over submit flow, and automatic score submission remain deferred.
+Status: updated after v22 game-over submission UI implementation. v020 adds a D1 migration, read-only Cloudflare Pages Function, and read-only `/leaderboard/` page. v21 adds the submit API. v22 adds explicit user-triggered game-over nickname submission UI. Automatic score submission remains deferred.
 
 ## References Inspected
 
@@ -46,10 +46,17 @@ Implemented in v21:
 - Anonymous insert into `ringzzle_scores`.
 - Public-safe success/error responses.
 
+Implemented in v22:
+
+- Game-over nickname input.
+- Explicit `Submit Score` button.
+- Anonymous browser player id stored locally.
+- Local nickname preference.
+- `/leaderboard/` link.
+- No rank claim after submit.
+
 Still deferred:
 
-- Nickname entry UI.
-- Game-over submit flow.
 - Privacy page launch copy.
 - Any automatic score submission from `/play/`.
 
@@ -282,7 +289,7 @@ Do not attempt tournament-grade anti-cheat in the first phase. Make the leaderbo
 4. Configure/verify Cloudflare D1 binding for production/staging after deployment.
 5. Add Ringzzle run counters needed for game-over submission, still local-only.
 6. Add privacy copy before public submission launch.
-7. Add game-over nickname/submission UI.
+7. Add game-over nickname/submission UI. Done in v22.
 8. Add manual moderation workflow documentation with real table names after production DB naming is final.
 9. Consider stronger anti-cheat only after real traffic exists.
 

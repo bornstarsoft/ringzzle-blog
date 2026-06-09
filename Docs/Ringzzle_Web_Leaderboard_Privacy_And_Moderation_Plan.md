@@ -1,6 +1,6 @@
 # Ringzzle Web Leaderboard Privacy And Moderation Plan
 
-Status: updated after v21 submit API implementation. v020 adds a D1 migration, read-only Cloudflare Pages Function, and read-only leaderboard page. v21 adds the submit API only. It does not add nickname UI, game-over submit UI, analytics, ads, login, or automatic score submission.
+Status: updated after v22 game-over submission UI implementation. v020 adds a D1 migration, read-only Cloudflare Pages Function, and read-only leaderboard page. v21 adds the submit API. v22 adds explicit user-triggered game-over submission UI. It does not add analytics, ads, login, email, fake rankings, or automatic score submission.
 
 ## Principles
 
@@ -193,10 +193,8 @@ Do this before enabling score submission.
 
 ## Current Phase Non-Goals
 
-The v21 submit API phase does not add:
+The v22 game-over submission UI phase does not add:
 
-- nickname UI
-- game-over submit UI
 - automatic score submission
 - login
 - email capture
