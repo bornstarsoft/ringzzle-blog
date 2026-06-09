@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v014.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v015.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -570,7 +570,7 @@ test("keeps sound off by default and requires an explicit user toggle", () => {
   assert.strictEqual(reloadState.userActivated, false);
 });
 
-test("recognizes only lightweight v014 sound event names", () => {
+test("recognizes only lightweight v015 sound event names", () => {
   ["place", "invalid", "line-clear", "color-burst", "game-over", "restart", "toggle-on", "toggle-off"].forEach((eventName) => {
     const cue = RingzzleCore.getSoundCueSpec(eventName);
     assert.strictEqual(cue.name, eventName);
@@ -581,8 +581,39 @@ test("recognizes only lightweight v014 sound event names", () => {
   assert.strictEqual(RingzzleCore.getSoundCueSpec("unknown"), null);
 });
 
-test("formats v014 move feedback for placement, clears, combo, Color Burst, and game over", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v014");
+test("makes Color Burst sound distinct without enabling sound by default", () => {
+  const lineClear = RingzzleCore.getSoundCueSpec("line-clear");
+  const colorBurst = RingzzleCore.getSoundCueSpec("color-burst");
+  const reloadState = RingzzleCore.createSoundState({ storedPreference: true });
+
+  assert.strictEqual(reloadState.enabled, false);
+  assert.strictEqual(colorBurst.character, "electric-zap");
+  assert.ok(Array.isArray(colorBurst.layers), "Color Burst should use layered oscillator cue data");
+  assert.ok(colorBurst.layers.length >= 2, "Color Burst should be more distinctive than a single sweep");
+  assert.notStrictEqual(colorBurst.type, lineClear.type);
+  assert.notStrictEqual(colorBurst.frequency, lineClear.frequency);
+});
+
+test("keeps larger tray rings inside target mobile tray wells", () => {
+  [
+    [390, 844],
+    [393, 852],
+    [430, 932],
+    [390, 720],
+    [393, 735],
+    [430, 780],
+  ].forEach(([width, height]) => {
+    const layout = RingzzleCore.calculateLayoutMetrics(width, height);
+    const metrics = RingzzleCore.calculateTrayRingRenderMetrics(layout);
+
+    assert.ok(metrics.ringScale >= 0.94, `${width}x${height} tray ring scale should be close to full size`);
+    assert.ok(metrics.largestRingDiameter < metrics.wellSize, `${width}x${height} largest ring should fit inside well`);
+    assert.ok(metrics.margin >= 4, `${width}x${height} largest ring should keep comfortable well margin`);
+  });
+});
+
+test("formats v015 move feedback for placement, clears, combo, Color Burst, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v015");
   assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),
