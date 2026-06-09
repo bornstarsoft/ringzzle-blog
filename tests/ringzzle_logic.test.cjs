@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v012.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v013.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -221,6 +221,8 @@ test("same-cell full color triggers Color Burst across the board", () => {
   assert.strictEqual(result.clearedRings, 5);
   assert.strictEqual(result.scoreDelta, 160);
   assert.strictEqual(result.colorBurstEvents[0].color, 5);
+  assert.deepStrictEqual(result.colorBurstEvents[0].source, { x: 2, y: 2 });
+  assert.strictEqual(result.colorBurstEvents[0].targets.length, 5);
   assert.deepStrictEqual(game.board[0][0], { small: null, medium: null, large: null });
   assert.deepStrictEqual(game.board[0][1], { small: null, medium: null, large: null });
   assert.deepStrictEqual(game.board[1][0], { small: null, medium: null, large: 4 });
@@ -308,12 +310,12 @@ test("starts available color count low for early games", () => {
 });
 
 test("increases available color count by score progression", () => {
-  assert.strictEqual(RingzzleCore.getAvailableColorCount(149), 3);
-  assert.strictEqual(RingzzleCore.getAvailableColorCount(150), 4);
-  assert.strictEqual(RingzzleCore.getAvailableColorCount(499), 4);
-  assert.strictEqual(RingzzleCore.getAvailableColorCount(500), 5);
-  assert.strictEqual(RingzzleCore.getAvailableColorCount(1199), 5);
-  assert.strictEqual(RingzzleCore.getAvailableColorCount(1200), 6);
+  assert.strictEqual(RingzzleCore.getAvailableColorCount(249), 3);
+  assert.strictEqual(RingzzleCore.getAvailableColorCount(250), 4);
+  assert.strictEqual(RingzzleCore.getAvailableColorCount(799), 4);
+  assert.strictEqual(RingzzleCore.getAvailableColorCount(800), 5);
+  assert.strictEqual(RingzzleCore.getAvailableColorCount(1599), 5);
+  assert.strictEqual(RingzzleCore.getAvailableColorCount(1600), 6);
 });
 
 test("caps available color count at the configured maximum", () => {
@@ -325,7 +327,7 @@ test("caps available color count at the configured maximum", () => {
 test("tray generation respects current available color count", () => {
   const game = makeGame({ rng: () => 0.999 });
 
-  game.score = 500;
+  game.score = 800;
   game.refillTray();
   assert.strictEqual(game.availableColorCount, 5);
   assert.ok(game.tray.every((trayPiece) => trayPiece.color < 5));
@@ -517,8 +519,42 @@ test("keeps line match indicators short and inside board bounds", () => {
   });
 });
 
-test("formats v012 move feedback for placement, clears, combo, Color Burst, and game over", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v012");
+test("keeps Color Burst source-to-target cue geometry short and inside board bounds", () => {
+  const layout = RingzzleCore.calculateLayoutMetrics(390, 720);
+  const event = {
+    color: 0,
+    source: { x: 1, y: 1 },
+    targets: [
+      { x: 1, y: 1, size: "small" },
+      { x: 1, y: 1, size: "medium" },
+      { x: 1, y: 1, size: "large" },
+      { x: 0, y: 2, size: "small" },
+      { x: 2, y: 0, size: "large" },
+    ],
+  };
+
+  const cue = RingzzleCore.calculateColorBurstCueGeometry(event, layout);
+  const boardLeft = layout.boardOrigin.x;
+  const boardTop = layout.boardOrigin.y;
+  const boardRight = boardLeft + layout.boardSize;
+  const boardBottom = boardTop + layout.boardSize;
+
+  assert.strictEqual(cue.duration, RingzzleCore.COLOR_BURST_EFFECT_DURATION);
+  assert.ok(cue.duration <= 220, "Color Burst cue should stay brief");
+  assert.strictEqual(cue.links.length, 2, "same-cell source rings should pulse but not create zero-length links");
+  assert.ok(cue.source.x >= boardLeft && cue.source.x <= boardRight);
+  assert.ok(cue.source.y >= boardTop && cue.source.y <= boardBottom);
+  cue.links.forEach((link) => {
+    assert.ok(link.x1 >= boardLeft && link.x1 <= boardRight, "link x1 should stay inside board");
+    assert.ok(link.x2 >= boardLeft && link.x2 <= boardRight, "link x2 should stay inside board");
+    assert.ok(link.y1 >= boardTop && link.y1 <= boardBottom, "link y1 should stay inside board");
+    assert.ok(link.y2 >= boardTop && link.y2 <= boardBottom, "link y2 should stay inside board");
+  });
+  assert.strictEqual(cue.targetPulses.length, 5);
+});
+
+test("formats v013 move feedback for placement, clears, combo, Color Burst, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v013");
   assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),

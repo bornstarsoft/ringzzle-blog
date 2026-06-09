@@ -126,7 +126,7 @@ Use these rules for Ringzzle Web after the v003 core-rule correction:
 - One ring per tray piece.
 - Ring sizes: small, medium, large.
 - 6-color palette cap in the current web build.
-- Available color count starts at 3 and increases by score progression.
+- Available color count starts at 3 and increases by score progression: `250` unlocks 4 colors, `800` unlocks 5 colors, and `1600` unlocks 6 colors.
 - One ring per size per cell.
 - Different sizes can coexist in one cell.
 - Same-color line clear across row, column, or diagonal.
@@ -144,6 +144,7 @@ Use these rules for Ringzzle Web after the v003 core-rule correction:
 
 ## Open Tuning Notes
 
-- v012 Color Burst should be playtested carefully because it is stronger than the previous local-only same-cell bonus.
-- Tune web color progression thresholds after playtesting. The Unity template thresholds are `25`, `50`, `150`, `250`, and `500`, but web v003 uses a wider score scale for its placement and clear scoring.
+- v013 slows color progression after Color Burst made the previous `150 / 500 / 1200` web thresholds feel too fast.
+- Continue playtesting Color Burst readability and balance because it is stronger than the previous local-only same-cell bonus.
+- The Unity template thresholds are `25`, `50`, `150`, `250`, and `500`, but web uses a wider score scale for placement, clear, combo, and Color Burst scoring.
 - Keep Unity template behavior as a rules reference, not a direct code source.
