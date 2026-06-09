@@ -1,4 +1,14 @@
 const MAX_RETURNED_ENTRIES = 100;
+const MAX_SCORE = 1000000;
+const MAX_BEST_CLEAR = 16;
+const MAX_LINE_CLEARS = 10000;
+const MAX_COLOR_BURSTS = 10000;
+const MIN_UNLOCKED_COLORS = 3;
+const MAX_UNLOCKED_COLORS = 6;
+const MAX_GAMES_PLAYED = 1000000;
+const MAX_CLIENT_VERSION_LENGTH = 20;
+const MAX_BROWSER_PLAYER_ID_LENGTH = 80;
+const BLOCKED_NICKNAMES = new Set(["admin", "moderator", "support", "staff", "owner", "badword"]);
 
 export function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -29,6 +39,114 @@ export function normalizeScope(value) {
 
 export function normalizeLeaderboardNicknameKey(value) {
   return String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function toInteger(value) {
+  if (typeof value === "number" && Number.isInteger(value)) return value;
+  if (typeof value === "string" && /^-?\d+$/.test(value.trim())) {
+    return Number.parseInt(value, 10);
+  }
+  return null;
+}
+
+function valueFromBody(body, camelKey, snakeKey, fallback) {
+  if (Object.prototype.hasOwnProperty.call(body, camelKey)) return body[camelKey];
+  if (snakeKey && Object.prototype.hasOwnProperty.call(body, snakeKey)) return body[snakeKey];
+  return fallback;
+}
+
+function validateIntegerRange(body, camelKey, snakeKey, fallback, min, max, message) {
+  const value = valueFromBody(body, camelKey, snakeKey, fallback);
+  const parsed = toInteger(value);
+  if (parsed === null || parsed < min || parsed > max) {
+    return { ok: false, error: message };
+  }
+  return { ok: true, value: parsed };
+}
+
+export function createId() {
+  if (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function") {
+    return globalThis.crypto.randomUUID();
+  }
+  return `score_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 12)}`;
+}
+
+export function validateNickname(value) {
+  const nickname = String(value || "").trim().replace(/\s+/g, " ");
+  if (nickname.length < 2 || nickname.length > 16) {
+    return { ok: false, error: "Nickname must be 2-16 characters." };
+  }
+  if (!/^[A-Za-z0-9 _-]+$/.test(nickname)) {
+    return { ok: false, error: "Nickname can use letters, numbers, spaces, underscore, and hyphen." };
+  }
+  if (BLOCKED_NICKNAMES.has(nickname.toLowerCase())) {
+    return { ok: false, error: "Please choose another nickname." };
+  }
+  return { ok: true, nickname, nickname_normalized: normalizeLeaderboardNicknameKey(nickname) };
+}
+
+export function validateSubmission(input) {
+  const body = input || {};
+  const nicknameResult = validateNickname(body.nickname);
+  if (!nicknameResult.ok) return nicknameResult;
+
+  const scoreResult = validateIntegerRange(body, "score", null, null, 0, MAX_SCORE, "Score is outside the leaderboard range.");
+  if (!scoreResult.ok) return scoreResult;
+
+  const bestClearResult = validateIntegerRange(body, "bestClear", "best_clear", 0, 0, MAX_BEST_CLEAR, "Best clear is outside the leaderboard range.");
+  if (!bestClearResult.ok) return bestClearResult;
+
+  const lineClearsResult = validateIntegerRange(body, "lineClears", "line_clears", 0, 0, MAX_LINE_CLEARS, "Line clear count is outside the leaderboard range.");
+  if (!lineClearsResult.ok) return lineClearsResult;
+
+  const colorBurstsResult = validateIntegerRange(body, "colorBursts", "color_bursts", 0, 0, MAX_COLOR_BURSTS, "Color Burst count is outside the leaderboard range.");
+  if (!colorBurstsResult.ok) return colorBurstsResult;
+
+  const maxUnlockedColorsResult = validateIntegerRange(
+    body,
+    "maxUnlockedColors",
+    "max_unlocked_colors",
+    MIN_UNLOCKED_COLORS,
+    MIN_UNLOCKED_COLORS,
+    MAX_UNLOCKED_COLORS,
+    "Unlocked color count is outside the leaderboard range."
+  );
+  if (!maxUnlockedColorsResult.ok) return maxUnlockedColorsResult;
+
+  const gamesPlayedValue = valueFromBody(body, "gamesPlayed", "games_played", null);
+  let gamesPlayed = null;
+  if (gamesPlayedValue !== null && gamesPlayedValue !== undefined && gamesPlayedValue !== "") {
+    const gamesPlayedResult = validateIntegerRange(body, "gamesPlayed", "games_played", null, 0, MAX_GAMES_PLAYED, "Games played count is outside the leaderboard range.");
+    if (!gamesPlayedResult.ok) return gamesPlayedResult;
+    gamesPlayed = gamesPlayedResult.value;
+  }
+
+  const browserPlayerId = String(valueFromBody(body, "browserPlayerId", "browser_player_id", "") || "").trim();
+  if (!browserPlayerId || browserPlayerId.length > MAX_BROWSER_PLAYER_ID_LENGTH) {
+    return { ok: false, error: "Browser player id is outside the leaderboard range." };
+  }
+
+  const clientVersion = String(valueFromBody(body, "clientVersion", "client_version", "") || "").trim();
+  if (!clientVersion || clientVersion.length > MAX_CLIENT_VERSION_LENGTH) {
+    return { ok: false, error: "Client version is outside the leaderboard range." };
+  }
+
+  return {
+    ok: true,
+    entry: {
+      nickname: nicknameResult.nickname,
+      nickname_normalized: nicknameResult.nickname_normalized,
+      score: scoreResult.value,
+      best_clear: bestClearResult.value,
+      line_clears: lineClearsResult.value,
+      color_bursts: colorBurstsResult.value,
+      max_unlocked_colors: maxUnlockedColorsResult.value,
+      games_played: gamesPlayed,
+      browser_player_id: browserPlayerId,
+      client_version: clientVersion,
+      board_version: "ringzzle-classic-v1",
+    },
+  };
 }
 
 function compareLeaderboardRows(left, right) {

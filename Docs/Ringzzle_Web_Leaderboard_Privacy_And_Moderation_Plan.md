@@ -1,6 +1,6 @@
 # Ringzzle Web Leaderboard Privacy And Moderation Plan
 
-Status: updated after v020 read-only leaderboard implementation. v020 adds a D1 migration, read-only Cloudflare Pages Function, and read-only leaderboard page. It does not add nickname UI, analytics, ads, login, or score submission.
+Status: updated after v21 submit API implementation. v020 adds a D1 migration, read-only Cloudflare Pages Function, and read-only leaderboard page. v21 adds the submit API only. It does not add nickname UI, game-over submit UI, analytics, ads, login, or automatic score submission.
 
 ## Principles
 
@@ -108,7 +108,7 @@ Use a `rejected` flag so suspicious or abusive rows disappear from public leader
 Suggested fields:
 
 - `rejected INTEGER NOT NULL DEFAULT 0`
-- `rejection_reason TEXT`
+- `reject_reason TEXT`
 - `moderation_note TEXT`
 
 Public read endpoints must filter `rejected = 0`.
@@ -122,16 +122,16 @@ Recommended workflow:
 1. Open Cloudflare Dashboard.
 2. Open the Ringzzle leaderboard D1 database.
 3. Inspect `ringzzle_scores`.
-4. Review top scores by `score`, `best_clear`, `duration_seconds`, `line_clears`, `color_bursts`, `created_at`, and `nickname`.
+4. Review top scores by `score`, `best_clear`, `line_clears`, `color_bursts`, `created_at`, and `nickname`.
 5. Set `rejected = 1` for abusive or impossible rows.
-6. Add a short `rejection_reason` or `moderation_note` if useful.
+6. Add a short `reject_reason` or `moderation_note` if useful.
 7. Confirm the public leaderboard no longer returns the row.
 
 Example review query:
 
 ```sql
 SELECT id, nickname, score, best_clear, line_clears, color_bursts,
-       max_unlocked_colors, duration_seconds, client_version, created_at, rejected
+       max_unlocked_colors, client_version, created_at, rejected
 FROM ringzzle_scores
 ORDER BY score DESC, best_clear DESC, created_at ASC
 LIMIT 50;
@@ -142,7 +142,7 @@ Example hide query:
 ```sql
 UPDATE ringzzle_scores
 SET rejected = 1,
-    rejection_reason = 'manual_review'
+    reject_reason = 'manual_review'
 WHERE id = 'PASTE_ROW_ID_HERE';
 ```
 
@@ -151,7 +151,7 @@ Example restore query:
 ```sql
 UPDATE ringzzle_scores
 SET rejected = 0,
-    rejection_reason = NULL
+    reject_reason = NULL
 WHERE id = 'PASTE_ROW_ID_HERE';
 ```
 
@@ -193,10 +193,11 @@ Do this before enabling score submission.
 
 ## Current Phase Non-Goals
 
-The v020 read-only phase does not add:
+The v21 submit API phase does not add:
 
 - nickname UI
-- score submission
+- game-over submit UI
+- automatic score submission
 - login
 - email capture
 - ads

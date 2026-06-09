@@ -1,6 +1,6 @@
 # Ringzzle Web v019 Leaderboard Architecture Plan
 
-Status: updated after v020 read-only implementation. v020 adds a D1 migration, read-only Cloudflare Pages Function, and read-only `/leaderboard/` page. Score submission, nickname UI, game-over submit flow, and production Cloudflare setup remain deferred.
+Status: updated after v21 submit API implementation. v020 adds a D1 migration, read-only Cloudflare Pages Function, and read-only `/leaderboard/` page. v21 adds the submit API only. Nickname UI, game-over submit flow, and automatic score submission remain deferred.
 
 ## References Inspected
 
@@ -30,7 +30,7 @@ Reasons:
 - It avoids login, account, email, and a separate backend vendor.
 - Blockzzle already proves the shape: `GET /api/leaderboard?scope=...` and a later `POST /api/leaderboard/submit`.
 
-v020 implements only the read layer. Do not add score submission until the next approved phase.
+v020 implemented only the read layer. v21 implements the submit API only.
 
 Implemented in v020:
 
@@ -39,13 +39,19 @@ Implemented in v020:
 - `GET /api/leaderboard?scope=alltime`.
 - A simple read-only `/leaderboard/` page.
 
-Still deferred:
+Implemented in v21:
 
 - `POST /api/leaderboard/submit`.
+- Server-side validation and nickname normalization.
+- Anonymous insert into `ringzzle_scores`.
+- Public-safe success/error responses.
+
+Still deferred:
+
 - Nickname entry UI.
 - Game-over submit flow.
 - Privacy page launch copy.
-- Cloudflare production binding/setup.
+- Any automatic score submission from `/play/`.
 
 ## Current Ringzzle Local Data
 
@@ -85,14 +91,13 @@ CREATE TABLE IF NOT EXISTS ringzzle_scores (
   color_bursts INTEGER NOT NULL DEFAULT 0,
   max_unlocked_colors INTEGER NOT NULL DEFAULT 3,
   games_played INTEGER,
-  duration_seconds INTEGER,
   board_version TEXT NOT NULL,
   client_version TEXT NOT NULL,
   browser_player_id TEXT,
   day_key TEXT NOT NULL,
   created_at TEXT NOT NULL,
   rejected INTEGER NOT NULL DEFAULT 0,
-  rejection_reason TEXT,
+  reject_reason TEXT,
   moderation_note TEXT
 );
 ```
@@ -137,25 +142,24 @@ Proposed `POST /api/leaderboard/submit` JSON:
 {
   "nickname": "Player",
   "score": 1230,
-  "best_clear": 2,
-  "line_clears": 8,
-  "color_bursts": 1,
-  "max_unlocked_colors": 5,
-  "games_played": 14,
-  "duration_seconds": 183,
-  "board_version": "ringzzle-classic-v1",
-  "client_version": "v018",
-  "browser_player_id": "local-random-id"
+  "bestClear": 2,
+  "lineClears": 8,
+  "colorBursts": 1,
+  "maxUnlockedColors": 5,
+  "gamesPlayed": 14,
+  "clientVersion": "v019",
+  "browserPlayerId": "local-random-id"
 }
 ```
 
 Notes:
 
-- `nickname`, `score`, `best_clear`, `board_version`, and `client_version` should be required.
-- `line_clears`, `color_bursts`, `max_unlocked_colors`, `games_played`, and `duration_seconds` are useful for sanity checks and moderation.
-- If total run line clears and Color Bursts are not tracked yet, add run counters before enabling submission.
+- `nickname`, `score`, `browserPlayerId`, and `clientVersion` are required in v21.
+- `bestClear`, `lineClears`, `colorBursts`, `maxUnlockedColors`, and `gamesPlayed` are optional but validated when present.
+- If total run line clears and Color Bursts are not tracked yet in the game UI, add run counters before enabling the game-over submission flow.
 - `day_key` and `created_at` must be server-derived.
 - `browser_player_id` must never be returned in public leaderboard responses.
+- The server writes snake_case D1 columns and stores `board_version = ringzzle-classic-v1`.
 
 ## Public Response Shape
 
@@ -241,9 +245,9 @@ Public leaderboard should show only the best row per `normalized_nickname` for e
 Store:
 
 - `rejected`
-- `rejection_reason`
+- `reject_reason`
 - `moderation_note`
-- gameplay context fields such as `duration_seconds`, `client_version`, `board_version`, `line_clears`, `color_bursts`, and `max_unlocked_colors`
+- gameplay context fields such as `client_version`, `board_version`, `line_clears`, `color_bursts`, and `max_unlocked_colors`
 
 Do not store:
 
@@ -274,10 +278,10 @@ Do not attempt tournament-grade anti-cheat in the first phase. Make the leaderbo
 
 1. Review and approve this plan. Done.
 2. Add D1 migration, read-only API, and read-only leaderboard page. Done in v020.
-3. Configure Cloudflare D1 binding for production/staging after review.
-4. Add Ringzzle run counters needed for submission, still local-only.
-5. Add privacy copy before public submission launch.
-6. Add `POST /api/leaderboard/submit`.
+3. Add `POST /api/leaderboard/submit`. Done in v21.
+4. Configure/verify Cloudflare D1 binding for production/staging after deployment.
+5. Add Ringzzle run counters needed for game-over submission, still local-only.
+6. Add privacy copy before public submission launch.
 7. Add game-over nickname/submission UI.
 8. Add manual moderation workflow documentation with real table names after production DB naming is final.
 9. Consider stronger anti-cheat only after real traffic exists.

@@ -830,6 +830,135 @@ test("serves Ringzzle leaderboard read API with safe public fields only", async 
   assert.ok(!Object.prototype.hasOwnProperty.call(data.entries[0], "nickname_normalized"));
 });
 
+test("validates Ringzzle leaderboard submit payloads with normalized nicknames", async () => {
+  const leaderboard = await import("../functions/api/leaderboard/_shared.mjs");
+
+  const validation = leaderboard.validateSubmission({
+    nickname: "  Ring   Master ",
+    score: "1230",
+    bestClear: "2",
+    lineClears: "8",
+    colorBursts: "1",
+    maxUnlockedColors: "5",
+    gamesPlayed: "14",
+    browserPlayerId: "browser-abc",
+    clientVersion: "v019",
+  });
+
+  assert.strictEqual(validation.ok, true);
+  assert.strictEqual(validation.entry.nickname, "Ring Master");
+  assert.strictEqual(validation.entry.nickname_normalized, "ring master");
+  assert.strictEqual(validation.entry.score, 1230);
+  assert.strictEqual(validation.entry.best_clear, 2);
+  assert.strictEqual(validation.entry.line_clears, 8);
+  assert.strictEqual(validation.entry.color_bursts, 1);
+  assert.strictEqual(validation.entry.max_unlocked_colors, 5);
+  assert.strictEqual(validation.entry.games_played, 14);
+  assert.strictEqual(validation.entry.browser_player_id, "browser-abc");
+  assert.strictEqual(validation.entry.client_version, "v019");
+
+  assert.strictEqual(leaderboard.validateSubmission({ nickname: "", score: 10, browserPlayerId: "id", clientVersion: "v019" }).ok, false);
+  assert.strictEqual(leaderboard.validateSubmission({ nickname: "bad!", score: 10, browserPlayerId: "id", clientVersion: "v019" }).ok, false);
+  assert.strictEqual(leaderboard.validateSubmission({ nickname: "Player", score: 1000001, browserPlayerId: "id", clientVersion: "v019" }).ok, false);
+  assert.strictEqual(leaderboard.validateSubmission({ nickname: "Player", score: 10, browserPlayerId: "", clientVersion: "v019" }).ok, false);
+  assert.strictEqual(leaderboard.validateSubmission({ nickname: "Player", score: 10, browserPlayerId: "id", clientVersion: "" }).ok, false);
+  assert.strictEqual(leaderboard.validateSubmission({ nickname: "Player", score: 10, maxUnlockedColors: 9, browserPlayerId: "id", clientVersion: "v019" }).ok, false);
+});
+
+test("accepts Ringzzle leaderboard submit API without returning browser player id", async () => {
+  const submit = await import("../functions/api/leaderboard/submit.js");
+  let capturedSql = "";
+  let capturedBindings = [];
+  const env = {
+    DB: {
+      prepare(sql) {
+        capturedSql = sql;
+        return {
+          bind(...values) {
+            capturedBindings = values;
+            return this;
+          },
+          async run() {
+            return { success: true };
+          },
+        };
+      },
+    },
+  };
+
+  const response = await submit.onRequest({
+    request: new Request("https://ringzzle.com/api/leaderboard/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nickname: "  Nova ",
+        score: 420,
+        browserPlayerId: "browser-secret",
+        clientVersion: "v019",
+        bestClear: 2,
+        lineClears: 5,
+        colorBursts: 1,
+        maxUnlockedColors: 4,
+        gamesPlayed: 7,
+      }),
+    }),
+    env,
+  });
+  const data = await response.json();
+
+  assert.strictEqual(response.status, 200);
+  assert.strictEqual(data.ok, true);
+  assert.strictEqual(data.accepted, true);
+  assert.strictEqual(data.nickname, "Nova");
+  assert.strictEqual(data.score, 420);
+  assert.ok(!Object.prototype.hasOwnProperty.call(data, "browserPlayerId"));
+  assert.ok(!Object.prototype.hasOwnProperty.call(data, "browser_player_id"));
+  assert.ok(!Object.prototype.hasOwnProperty.call(data, "moderation_note"));
+  assert.ok(capturedSql.includes("INSERT INTO ringzzle_scores"));
+  assert.strictEqual(capturedBindings[3], "Nova");
+  assert.strictEqual(capturedBindings[4], "nova");
+  assert.strictEqual(capturedBindings[5], "browser-secret");
+  assert.strictEqual(capturedBindings[6], 420);
+  assert.strictEqual(capturedBindings[12], "v019");
+  assert.strictEqual(capturedBindings[14], 0);
+  assert.strictEqual(capturedBindings[15], null);
+  assert.strictEqual(capturedBindings[16], null);
+});
+
+test("rejects unsafe Ringzzle leaderboard submit requests", async () => {
+  const submit = await import("../functions/api/leaderboard/submit.js");
+  const env = { DB: { prepare() { throw new Error("should not write invalid submissions"); } } };
+
+  const getResponse = await submit.onRequest({
+    request: new Request("https://ringzzle.com/api/leaderboard/submit", { method: "GET" }),
+    env,
+  });
+  assert.strictEqual(getResponse.status, 405);
+
+  const invalidJson = await submit.onRequest({
+    request: new Request("https://ringzzle.com/api/leaderboard/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{",
+    }),
+    env,
+  });
+  assert.strictEqual(invalidJson.status, 400);
+
+  const badPayload = await submit.onRequest({
+    request: new Request("https://ringzzle.com/api/leaderboard/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nickname: "admin", score: 10, browserPlayerId: "id", clientVersion: "v019" }),
+    }),
+    env,
+  });
+  const badPayloadData = await badPayload.json();
+  assert.strictEqual(badPayload.status, 400);
+  assert.strictEqual(badPayloadData.ok, false);
+  assert.ok(!Object.prototype.hasOwnProperty.call(badPayloadData, "browserPlayerId"));
+});
+
 (async () => {
   let passed = 0;
   for (const { name, fn } of tests) {
