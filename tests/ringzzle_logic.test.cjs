@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v010.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v011.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -411,7 +411,8 @@ test("keeps extra breathing room between score panels and board on mobile", () =
     const layout = RingzzleCore.calculateLayoutMetrics(viewport.width, viewport.height);
     const header = RingzzleCore.calculateHeaderMetrics(layout);
 
-    assert.ok(layout.boardOrigin.y - header.chipBottom >= 28, `score-to-board gap should breathe at ${viewport.width}x${viewport.height}`);
+    assert.ok(layout.boardOrigin.y - header.chipBottom >= 34, `score-to-board gap should breathe at ${viewport.width}x${viewport.height}`);
+    assert.ok(RingzzleCore.getScoreBoardVisualGap(layout) >= 24, `score-to-board panel gap should be visible at ${viewport.width}x${viewport.height}`);
     assert.ok(layout.boardSize >= 300, `board should remain playable at ${viewport.width}x${viewport.height}`);
   });
 });
@@ -460,8 +461,32 @@ test("tracks drag ghost cleanup transitions defensively", () => {
   assert.strictEqual(drag.state.returning, false);
 });
 
-test("formats v010 move feedback for placement, clears, combo, cell bonus, and game over", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v010");
+test("keeps line match indicators short and inside board bounds", () => {
+  const layout = RingzzleCore.calculateLayoutMetrics(390, 720);
+  [
+    { id: "row-1", color: 0, orientation: "horizontal" },
+    { id: "column-2", color: 1, orientation: "vertical" },
+    { id: "diagonal-down", color: 2, orientation: "diagonal-down" },
+    { id: "diagonal-up", color: 3, orientation: "diagonal-up" },
+  ].forEach((event) => {
+    const indicator = RingzzleCore.calculateLineIndicatorGeometry(event, layout);
+    const boardLeft = layout.boardOrigin.x;
+    const boardTop = layout.boardOrigin.y;
+    const boardRight = boardLeft + layout.boardSize;
+    const boardBottom = boardTop + layout.boardSize;
+
+    assert.strictEqual(indicator.orientation, event.orientation);
+    assert.strictEqual(indicator.duration, RingzzleCore.LINE_INDICATOR_DURATION);
+    assert.ok(indicator.duration <= 180, "line indicator should disappear quickly");
+    assert.ok(indicator.x1 >= boardLeft && indicator.x1 <= boardRight, `${event.id} x1 should stay inside board`);
+    assert.ok(indicator.x2 >= boardLeft && indicator.x2 <= boardRight, `${event.id} x2 should stay inside board`);
+    assert.ok(indicator.y1 >= boardTop && indicator.y1 <= boardBottom, `${event.id} y1 should stay inside board`);
+    assert.ok(indicator.y2 >= boardTop && indicator.y2 <= boardBottom, `${event.id} y2 should stay inside board`);
+  });
+});
+
+test("formats v011 move feedback for placement, clears, combo, cell bonus, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v011");
   assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),
