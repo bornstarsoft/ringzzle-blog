@@ -1,6 +1,6 @@
 # Ringzzle Web Leaderboard Privacy And Moderation Plan
 
-Status: documentation only. This plan does not implement backend code, D1, Cloudflare Functions, leaderboard UI, nickname UI, analytics, ads, login, or score submission.
+Status: updated after v020 read-only leaderboard implementation. v020 adds a D1 migration, read-only Cloudflare Pages Function, and read-only leaderboard page. It does not add nickname UI, analytics, ads, login, or score submission.
 
 ## Principles
 
@@ -193,12 +193,8 @@ Do this before enabling score submission.
 
 ## Current Phase Non-Goals
 
-This phase does not add:
+The v020 read-only phase does not add:
 
-- backend
-- D1
-- Cloudflare Functions
-- leaderboard UI
 - nickname UI
 - score submission
 - login

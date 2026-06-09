@@ -1,6 +1,6 @@
 # Ringzzle Web v019 Leaderboard Architecture Plan
 
-Status: documentation only. This plan does not implement backend code, D1, Cloudflare Functions, score submission, nickname UI, or leaderboard UI.
+Status: updated after v020 read-only implementation. v020 adds a D1 migration, read-only Cloudflare Pages Function, and read-only `/leaderboard/` page. Score submission, nickname UI, game-over submit flow, and production Cloudflare setup remain deferred.
 
 ## References Inspected
 
@@ -28,9 +28,24 @@ Reasons:
 - The required API surface is small.
 - D1 is enough for Today Top 100 and All-Time Top 100.
 - It avoids login, account, email, and a separate backend vendor.
-- Blockzzle already proves the shape: `GET /api/leaderboard?scope=...` and `POST /api/leaderboard/submit`.
+- Blockzzle already proves the shape: `GET /api/leaderboard?scope=...` and a later `POST /api/leaderboard/submit`.
 
-Do not implement this in v018/v019. The next implementation phase should add migrations and Functions only after this plan is reviewed.
+v020 implements only the read layer. Do not add score submission until the next approved phase.
+
+Implemented in v020:
+
+- D1 migration for `ringzzle_scores`.
+- `GET /api/leaderboard?scope=today`.
+- `GET /api/leaderboard?scope=alltime`.
+- A simple read-only `/leaderboard/` page.
+
+Still deferred:
+
+- `POST /api/leaderboard/submit`.
+- Nickname entry UI.
+- Game-over submit flow.
+- Privacy page launch copy.
+- Cloudflare production binding/setup.
 
 ## Current Ringzzle Local Data
 
@@ -257,14 +272,15 @@ Do not attempt tournament-grade anti-cheat in the first phase. Make the leaderbo
 
 ## Implementation Phases
 
-1. Review and approve this plan.
-2. Add Ringzzle run counters needed for submission, still local-only.
-3. Add D1 migration and Pages Functions.
-4. Add privacy copy before public launch.
-5. Add game-over nickname/submission UI.
-6. Add read-only leaderboard page or panel.
-7. Add manual moderation workflow documentation with real table names.
-8. Consider stronger anti-cheat only after real traffic exists.
+1. Review and approve this plan. Done.
+2. Add D1 migration, read-only API, and read-only leaderboard page. Done in v020.
+3. Configure Cloudflare D1 binding for production/staging after review.
+4. Add Ringzzle run counters needed for submission, still local-only.
+5. Add privacy copy before public submission launch.
+6. Add `POST /api/leaderboard/submit`.
+7. Add game-over nickname/submission UI.
+8. Add manual moderation workflow documentation with real table names after production DB naming is final.
+9. Consider stronger anti-cheat only after real traffic exists.
 
 ## Stop Conditions
 

@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v018.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v019.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -486,7 +486,7 @@ test("keeps drawn board frame and tray rack visually separated on mobile", () =>
   });
 });
 
-test("keeps status message away from board and tray rings on mobile", () => {
+test("keeps status message below tray rings without Safari overflow on mobile", () => {
   [
     { width: 390, height: 844 },
     { width: 393, height: 852 },
@@ -496,17 +496,15 @@ test("keeps status message away from board and tray rings on mobile", () => {
     { width: 430, height: 780 },
   ].forEach((viewport) => {
     const layout = RingzzleCore.calculateLayoutMetrics(viewport.width, viewport.height);
-    const header = RingzzleCore.calculateHeaderMetrics(layout);
-    const panelPad = Math.max(12, Math.floor(layout.cellSize * 0.085));
-    const statusBottom = layout.statusY + layout.statusHeight;
-    const boardPanelTop = layout.boardOrigin.y - panelPad;
     const trayMetrics = RingzzleCore.calculateTrayRingRenderMetrics(layout);
-    const trayRingTop = layout.trayY + layout.trayHeight / 2 - trayMetrics.largestRingDiameter / 2;
+    const trayRingBottom = layout.trayY + layout.trayHeight / 2 + trayMetrics.largestRingDiameter / 2;
     const trayBottom = layout.trayY + layout.trayHeight;
+    const statusBottom = layout.statusY + layout.statusHeight;
 
-    assert.ok(layout.statusY >= header.chipBottom, `status should sit below score chips at ${viewport.width}x${viewport.height}`);
-    assert.ok(statusBottom <= boardPanelTop, `status should not overlap board panel at ${viewport.width}x${viewport.height}`);
-    assert.ok(statusBottom < trayRingTop, `status should clear tray rings at ${viewport.width}x${viewport.height}`);
+    assert.ok(layout.statusY >= trayRingBottom + 4, `status should sit below large tray rings at ${viewport.width}x${viewport.height}`);
+    assert.ok(layout.statusY >= trayBottom - 6, `status should live below the tray band at ${viewport.width}x${viewport.height}`);
+    assert.ok(statusBottom <= viewport.height - 8, `status should remain visible at ${viewport.width}x${viewport.height}`);
+    assert.ok(statusBottom <= viewport.height - Math.max(8, layout.bottomGap - 52), `status should clear practical Safari reserve at ${viewport.width}x${viewport.height}`);
     assert.ok(trayBottom <= viewport.height - layout.bottomGap, `tray should stay above Safari reserve at ${viewport.width}x${viewport.height}`);
   });
 });
@@ -612,7 +610,7 @@ test("keeps sound off by default and requires an explicit user toggle", () => {
   assert.strictEqual(reloadState.userActivated, false);
 });
 
-test("recognizes only lightweight v018 sound event names", () => {
+test("recognizes only lightweight v019 sound event names", () => {
   ["place", "invalid", "line-clear", "color-burst", "game-over", "restart", "toggle-on", "toggle-off"].forEach((eventName) => {
     const cue = RingzzleCore.getSoundCueSpec(eventName);
     assert.strictEqual(cue.name, eventName);
@@ -674,8 +672,8 @@ test("hides tray rack and wells without removing tray hit areas", () => {
   assert.strictEqual(RingzzleCore.TRAY_VISUAL_STYLE.keepHitAreas, true);
 });
 
-test("formats v018 move feedback for placement, clears, combo, Color Burst, and game over", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v018");
+test("formats v019 move feedback for placement, clears, combo, Color Burst, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v019");
   assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),
@@ -695,20 +693,159 @@ test("formats v018 move feedback for placement, clears, combo, Color Burst, and 
   );
 });
 
-let passed = 0;
-for (const { name, fn } of tests) {
-  try {
-    fn();
-    passed += 1;
-    console.log(`ok ${passed} - ${name}`);
-  } catch (error) {
-    console.error(`not ok ${passed + 1} - ${name}`);
-    console.error(error);
-    process.exitCode = 1;
-    break;
-  }
-}
+test("dedupes Ringzzle leaderboard rows by normalized nickname without exposing private fields", async () => {
+  const leaderboard = await import("../functions/api/leaderboard/_shared.mjs");
+  const rows = [
+    {
+      id: "older",
+      nickname: "Nova",
+      nickname_normalized: "nova",
+      score: 400,
+      best_clear: 1,
+      line_clears: 2,
+      color_bursts: 0,
+      max_unlocked_colors: 4,
+      created_at: "2026-06-09T01:00:00.000Z",
+      browser_player_id: "secret-a",
+    },
+    {
+      id: "better",
+      nickname: " nova ",
+      nickname_normalized: "nova",
+      score: 550,
+      best_clear: 1,
+      line_clears: 2,
+      color_bursts: 0,
+      max_unlocked_colors: 4,
+      created_at: "2026-06-09T02:00:00.000Z",
+      browser_player_id: "secret-b",
+    },
+    {
+      id: "orbit",
+      nickname: "Orbit",
+      nickname_normalized: "orbit",
+      score: 500,
+      best_clear: 2,
+      line_clears: 5,
+      color_bursts: 1,
+      max_unlocked_colors: 5,
+      created_at: "2026-06-09T00:30:00.000Z",
+      browser_player_id: "secret-c",
+    },
+  ];
 
-if (process.exitCode !== 1) {
-  console.log(`# ${passed} tests passed`);
-}
+  const entries = leaderboard.dedupeLeaderboardRowsByNickname(rows).map(leaderboard.publicEntry);
+
+  assert.strictEqual(entries.length, 2);
+  assert.strictEqual(entries[0].rank, 1);
+  assert.strictEqual(entries[0].nickname.trim().toLowerCase(), "nova");
+  assert.strictEqual(entries[0].score, 550);
+  assert.strictEqual(entries[1].nickname, "Orbit");
+  assert.strictEqual(entries[1].bestClear, 2);
+  assert.ok(!Object.prototype.hasOwnProperty.call(entries[0], "browser_player_id"));
+  assert.ok(!Object.prototype.hasOwnProperty.call(entries[0], "moderation_note"));
+});
+
+test("normalizes Ringzzle leaderboard scopes and safe unavailable JSON shape", async () => {
+  const leaderboard = await import("../functions/api/leaderboard/_shared.mjs");
+
+  assert.strictEqual(leaderboard.normalizeScope("alltime"), "alltime");
+  assert.strictEqual(leaderboard.normalizeScope("today"), "today");
+  assert.strictEqual(leaderboard.normalizeScope("bad"), "today");
+  assert.strictEqual(leaderboard.normalizeLeaderboardNicknameKey("  Ring   Master "), "ring master");
+
+  const response = leaderboard.unavailableJson();
+  const data = await response.json();
+  assert.strictEqual(response.status, 503);
+  assert.strictEqual(data.ok, false);
+  assert.strictEqual(data.error, "leaderboard_unavailable");
+});
+
+test("serves Ringzzle leaderboard read API with safe public fields only", async () => {
+  const api = await import("../functions/api/leaderboard/index.js");
+  const unavailable = await api.onRequestGet({
+    request: new Request("https://ringzzle.com/api/leaderboard?scope=today"),
+    env: {},
+  });
+  assert.strictEqual(unavailable.status, 503);
+
+  const rows = [
+    {
+      id: "top",
+      nickname: "Nova",
+      nickname_normalized: "nova",
+      score: 900,
+      best_clear: 2,
+      line_clears: 6,
+      color_bursts: 1,
+      max_unlocked_colors: 5,
+      created_at: "2026-06-09T01:00:00.000Z",
+      browser_player_id: "hidden",
+      rejected: 0,
+    },
+    {
+      id: "dupe",
+      nickname: " nova ",
+      nickname_normalized: "nova",
+      score: 700,
+      best_clear: 3,
+      line_clears: 9,
+      color_bursts: 2,
+      max_unlocked_colors: 6,
+      created_at: "2026-06-09T00:30:00.000Z",
+      browser_player_id: "hidden-too",
+      rejected: 0,
+    },
+  ];
+  const env = {
+    DB: {
+      prepare(sql) {
+        assert.ok(sql.includes("ringzzle_scores"));
+        return {
+          bind(value) {
+            assert.match(value, /^\d{4}-\d{2}-\d{2}$/);
+            return this;
+          },
+          async all() {
+            return { results: rows };
+          },
+        };
+      },
+    },
+  };
+
+  const response = await api.onRequestGet({
+    request: new Request("https://ringzzle.com/api/leaderboard?scope=today"),
+    env,
+  });
+  const data = await response.json();
+
+  assert.strictEqual(response.status, 200);
+  assert.strictEqual(data.ok, true);
+  assert.strictEqual(data.scope, "today");
+  assert.strictEqual(data.entries.length, 1);
+  assert.strictEqual(data.entries[0].score, 900);
+  assert.strictEqual(data.entries[0].bestClear, 2);
+  assert.ok(!Object.prototype.hasOwnProperty.call(data.entries[0], "browser_player_id"));
+  assert.ok(!Object.prototype.hasOwnProperty.call(data.entries[0], "nickname_normalized"));
+});
+
+(async () => {
+  let passed = 0;
+  for (const { name, fn } of tests) {
+    try {
+      await fn();
+      passed += 1;
+      console.log(`ok ${passed} - ${name}`);
+    } catch (error) {
+      console.error(`not ok ${passed + 1} - ${name}`);
+      console.error(error);
+      process.exitCode = 1;
+      break;
+    }
+  }
+
+  if (process.exitCode !== 1) {
+    console.log(`# ${passed} tests passed`);
+  }
+})();

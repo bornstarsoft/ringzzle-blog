@@ -1,0 +1,45 @@
+{{ define "main" }}
+<article class="ringzzle-leaderboard-page">
+  <div class="ringzzle-leaderboard-hero">
+    <div>
+      <p class="ringzzle-eyebrow">Anonymous leaderboard</p>
+      <h1>Ringzzle Leaderboard</h1>
+      <p>Today and All-Time scores will show real submitted entries only. Score submission is not enabled yet.</p>
+    </div>
+    <a class="ringzzle-play-link" href='{{ relURL "play/" }}'>Play Ringzzle</a>
+  </div>
+
+  <section class="ringzzle-leaderboard-panel" aria-labelledby="ringzzle-leaderboard-title">
+    <div class="ringzzle-leaderboard-head">
+      <h2 id="ringzzle-leaderboard-title">Top Scores</h2>
+      <div class="ringzzle-leaderboard-tabs" role="group" aria-label="Leaderboard scope">
+        <button type="button" class="is-active" data-scope="today">Today</button>
+        <button type="button" data-scope="alltime">All-Time</button>
+      </div>
+    </div>
+
+    <p class="ringzzle-leaderboard-status" data-leaderboard-status>Loading leaderboard...</p>
+
+    <div class="ringzzle-leaderboard-table-wrap">
+      <table class="ringzzle-leaderboard-table" aria-label="Ringzzle leaderboard">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Nickname</th>
+            <th>Score</th>
+            <th>Best Clear</th>
+            <th>Lines</th>
+            <th>Bursts</th>
+            <th>Colors</th>
+          </tr>
+        </thead>
+        <tbody data-leaderboard-rows></tbody>
+      </table>
+    </div>
+  </section>
+
+  <p class="ringzzle-leaderboard-note">No login. No email. Nickname-only score submission is planned for a later phase.</p>
+</article>
+<link rel="stylesheet" href='{{ relURL "css/leaderboard.v001.css" }}' />
+<script src='{{ relURL "js/leaderboard.v001.js" }}' defer></script>
+{{ end }}
