@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v007.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v008.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -336,8 +336,56 @@ test("keeps the board and bottom tray inside target iPhone portrait viewports", 
   });
 });
 
-test("formats v007 move feedback for placement, clears, combo, cell bonus, and game over", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v007");
+test("sets a JS visible-height CSS variable from visualViewport when available", () => {
+  const writes = {};
+  const fakeWindow = {
+    innerWidth: 390,
+    innerHeight: 844,
+    visualViewport: {
+      width: 393.8,
+      height: 735.6,
+    },
+    document: {
+      documentElement: {
+        style: {
+          setProperty(key, value) {
+            writes[key] = value;
+          },
+        },
+      },
+    },
+  };
+
+  const size = RingzzleCore.syncCssViewportSize(fakeWindow);
+
+  assert.deepStrictEqual(size, { width: 393, height: 735 });
+  assert.strictEqual(writes["--ringzzle-viewport-width"], "393px");
+  assert.strictEqual(writes["--ringzzle-viewport-height"], "735px");
+  assert.strictEqual(writes["--ringzzle-visible-height"], "735px");
+});
+
+test("uses compact mobile layout reserves for reduced-height iPhone Safari viewports", () => {
+  [
+    { width: 390, height: 720 },
+    { width: 393, height: 735 },
+    { width: 430, height: 780 },
+  ].forEach((viewport) => {
+    const layout = RingzzleCore.calculateLayoutMetrics(viewport.width, viewport.height);
+    const boardBottom = layout.boardOrigin.y + layout.boardSize;
+    const trayBottom = layout.trayY + layout.trayHeight;
+    const statusBottom = layout.statusY + layout.statusHeight;
+
+    assert.ok(layout.headerBottom <= 116, `header should compact for ${viewport.width}x${viewport.height}`);
+    assert.ok(layout.bottomGap >= 64, `bottom reserve should cover Safari toolbar at ${viewport.width}x${viewport.height}`);
+    assert.ok(layout.boardSize >= 300, `board should remain playable at ${viewport.width}x${viewport.height}`);
+    assert.ok(boardBottom < layout.trayY, `tray should sit below board at ${viewport.width}x${viewport.height}`);
+    assert.ok(trayBottom <= viewport.height - layout.bottomGap, `tray should stay above Safari chrome at ${viewport.width}x${viewport.height}`);
+    assert.ok(statusBottom <= viewport.height - 8, `status should remain visible at ${viewport.width}x${viewport.height}`);
+  });
+});
+
+test("formats v008 move feedback for placement, clears, combo, cell bonus, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v008");
   assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),
