@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v025.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v026.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -610,7 +610,7 @@ test("keeps sound off by default and requires an explicit user toggle", () => {
   assert.strictEqual(reloadState.userActivated, false);
 });
 
-test("recognizes only lightweight v025 sound event names", () => {
+test("recognizes only lightweight v026 sound event names", () => {
   ["place", "invalid", "line-clear", "color-burst", "game-over", "restart", "toggle-on", "toggle-off"].forEach((eventName) => {
     const cue = RingzzleCore.getSoundCueSpec(eventName);
     assert.strictEqual(cue.name, eventName);
@@ -672,8 +672,8 @@ test("hides tray rack and wells without removing tray hit areas", () => {
   assert.strictEqual(RingzzleCore.TRAY_VISUAL_STYLE.keepHitAreas, true);
 });
 
-test("formats v025 move feedback for placement, clears, combo, Color Burst, and game over", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v025");
+test("formats v026 move feedback for placement, clears, combo, Color Burst, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v026");
   assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),
@@ -1000,7 +1000,7 @@ test("builds anonymous leaderboard submit payload from completed game state", ()
     nickname: "Nova",
     score: 1230,
     browserPlayerId: "browser-secret",
-    clientVersion: "v025",
+    clientVersion: "v026",
     bestClear: 2,
     lineClears: 8,
     colorBursts: 1,
@@ -1033,6 +1033,37 @@ test("guards leaderboard submit state against duplicate taps and auto-submit", (
   assert.strictEqual(state.submitted, false);
 });
 
+test("highlights Submit Score in yellow only for new local Today best", () => {
+  const newBest = RingzzleCore.getLeaderboardSubmitCta({
+    score: 6550,
+    previousTodayBest: 3860,
+    submitted: false,
+    submitting: false,
+  });
+  assert.strictEqual(newBest.buttonLabel, "Submit Score");
+  assert.strictEqual(newBest.primary, true);
+  assert.strictEqual(newBest.fill, "#facc15");
+  assert.match(newBest.message, /New Today Best/i);
+
+  const notBest = RingzzleCore.getLeaderboardSubmitCta({
+    score: 2500,
+    previousTodayBest: 3860,
+    submitted: false,
+    submitting: false,
+  });
+  assert.strictEqual(notBest.primary, false);
+  assert.notStrictEqual(notBest.fill, "#facc15");
+
+  const submitted = RingzzleCore.getLeaderboardSubmitCta({
+    score: 6550,
+    previousTodayBest: 3860,
+    submitted: true,
+    submitting: false,
+  });
+  assert.strictEqual(submitted.buttonLabel, "Submitted");
+  assert.strictEqual(submitted.primary, false);
+});
+
 test("uses Blockzzle-style prompt nickname flow without inline input dependency", () => {
   assert.strictEqual(RingzzleCore.LEADERBOARD_NICKNAME_ENTRY_MODE, "prompt");
   assert.strictEqual(RingzzleCore.LEADERBOARD_INLINE_NICKNAME_INPUT, false);
@@ -1060,6 +1091,7 @@ test("uses Blockzzle-style prompt nickname flow without inline input dependency"
   assert.strictEqual(prompted.nickname, "Ring Master");
   assert.strictEqual(prompted.prompted, true);
   assert.strictEqual(prompted.shouldStore, true);
+  assert.strictEqual(RingzzleCore.shouldSubmitLeaderboardAfterNickname(prompted), true);
 
   const cancelled = RingzzleCore.resolveLeaderboardNicknameForSubmit({
     storedNickname: "",
@@ -1067,6 +1099,7 @@ test("uses Blockzzle-style prompt nickname flow without inline input dependency"
   });
   assert.strictEqual(cancelled.ok, false);
   assert.strictEqual(cancelled.cancelled, true);
+  assert.strictEqual(RingzzleCore.shouldSubmitLeaderboardAfterNickname(cancelled), false);
 
   const invalid = RingzzleCore.resolveLeaderboardNicknameForSubmit({
     storedNickname: "",
@@ -1075,6 +1108,27 @@ test("uses Blockzzle-style prompt nickname flow without inline input dependency"
   assert.strictEqual(invalid.ok, false);
   assert.strictEqual(invalid.cancelled, false);
   assert.match(invalid.message, /2-16|letters/i);
+});
+
+test("uses readable nickname display copy for game-over leaderboard panel", () => {
+  const visible = RingzzleCore.getLeaderboardNicknameDisplay("  sjkim  ");
+  assert.strictEqual(visible.text, "Nickname: sjkim");
+  assert.strictEqual(visible.highlighted, true);
+  assert.ok(visible.fontSize >= 12);
+  assert.strictEqual(visible.color, "#facc15");
+
+  const missing = RingzzleCore.getLeaderboardNicknameDisplay("");
+  assert.match(missing.text, /Submit Score/i);
+  assert.strictEqual(missing.highlighted, false);
+});
+
+test("builds no-store cache-busted leaderboard read URLs", () => {
+  const today = RingzzleCore.buildLeaderboardReadUrl("today", 12345);
+  const alltime = RingzzleCore.buildLeaderboardReadUrl("alltime", 12345);
+
+  assert.strictEqual(today, "/api/leaderboard?scope=today&v=12345");
+  assert.strictEqual(alltime, "/api/leaderboard?scope=alltime&v=12345");
+  assert.strictEqual(RingzzleCore.buildLeaderboardReadUrl("bad", 0), "/api/leaderboard?scope=today&v=0");
 });
 
 test("positions Rank button under Restart and opens an in-game modal", () => {
@@ -1252,6 +1306,8 @@ test("refreshes in-game leaderboard state after successful submit", () => {
   assert.strictEqual(refreshed.needsLoad, true);
   assert.strictEqual(refreshed.entries.today, null);
   assert.strictEqual(refreshed.entries.alltime, null);
+  assert.strictEqual(refreshed.loadingScope, null);
+  assert.strictEqual(refreshed.status, "Refreshing leaderboard...");
 });
 
 (async () => {
