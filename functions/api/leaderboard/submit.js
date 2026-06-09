@@ -1,5 +1,8 @@
 import { createId, getDayKey, json, unavailableJson, validateSubmission } from "./_shared.mjs";
 
+const MAX_JSON_BODY_BYTES = 8192;
+const SUBMISSION_COOLDOWN_SECONDS = 8;
+
 async function readJson(request) {
   try {
     return await request.json();
@@ -13,7 +16,27 @@ function isJsonRequest(request) {
   return contentType.toLowerCase().includes("application/json");
 }
 
-export async function onRequest({ request, env }) {
+function isRequestBodyTooLarge(request) {
+  const contentLength = Number.parseInt(request.headers.get("content-length") || "0", 10);
+  return Number.isFinite(contentLength) && contentLength > MAX_JSON_BODY_BYTES;
+}
+
+async function hasRecentSubmission(db, browserPlayerId, now) {
+  const since = new Date(now.getTime() - SUBMISSION_COOLDOWN_SECONDS * 1000).toISOString();
+  const result = await db
+    .prepare(`
+      SELECT COUNT(*) AS count
+      FROM ringzzle_scores
+      WHERE rejected = 0
+        AND browser_player_id = ?
+        AND created_at >= ?
+    `)
+    .bind(browserPlayerId, since)
+    .first();
+  return Number(result && result.count ? result.count : 0) > 0;
+}
+
+export async function onRequest({ request, env, now: injectedNow }) {
   if (request.method !== "POST") {
     return json({
       ok: false,
@@ -30,6 +53,14 @@ export async function onRequest({ request, env }) {
       error: "unsupported_media_type",
       message: "Submit leaderboard scores as JSON.",
     }, 415);
+  }
+
+  if (isRequestBodyTooLarge(request)) {
+    return json({
+      ok: false,
+      error: "payload_too_large",
+      message: "Leaderboard submission is too large.",
+    }, 413);
   }
 
   const body = await readJson(request);
@@ -50,12 +81,20 @@ export async function onRequest({ request, env }) {
     }, 400);
   }
 
-  const now = new Date();
+  const now = injectedNow instanceof Date ? injectedNow : new Date();
   const createdAt = now.toISOString();
   const dayKey = getDayKey(now);
   const entry = validation.entry;
 
   try {
+    if (await hasRecentSubmission(env.DB, entry.browser_player_id, now)) {
+      return json({
+        ok: false,
+        error: "rate_limited",
+        message: "Please wait a moment before submitting another score.",
+      }, 429);
+    }
+
     await env.DB
       .prepare(`
         INSERT INTO ringzzle_scores (

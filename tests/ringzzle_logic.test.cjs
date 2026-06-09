@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v026.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v027.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -610,7 +610,7 @@ test("keeps sound off by default and requires an explicit user toggle", () => {
   assert.strictEqual(reloadState.userActivated, false);
 });
 
-test("recognizes only lightweight v026 sound event names", () => {
+test("recognizes only lightweight v027 sound event names", () => {
   ["place", "invalid", "line-clear", "color-burst", "game-over", "restart", "toggle-on", "toggle-off"].forEach((eventName) => {
     const cue = RingzzleCore.getSoundCueSpec(eventName);
     assert.strictEqual(cue.name, eventName);
@@ -672,8 +672,8 @@ test("hides tray rack and wells without removing tray hit areas", () => {
   assert.strictEqual(RingzzleCore.TRAY_VISUAL_STYLE.keepHitAreas, true);
 });
 
-test("formats v026 move feedback for placement, clears, combo, Color Burst, and game over", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v026");
+test("formats v027 move feedback for placement, clears, combo, Color Burst, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v027");
   assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),
@@ -873,6 +873,17 @@ test("accepts Ringzzle leaderboard submit API without returning browser player i
     DB: {
       prepare(sql) {
         capturedSql = sql;
+        if (sql.includes("COUNT(*) AS count")) {
+          return {
+            bind(...values) {
+              assert.deepStrictEqual(values.slice(0, 1), ["browser-secret"]);
+              return this;
+            },
+            async first() {
+              return { count: 0 };
+            },
+          };
+        }
         return {
           bind(...values) {
             capturedBindings = values;
@@ -1000,7 +1011,7 @@ test("builds anonymous leaderboard submit payload from completed game state", ()
     nickname: "Nova",
     score: 1230,
     browserPlayerId: "browser-secret",
-    clientVersion: "v026",
+    clientVersion: "v027",
     bestClear: 2,
     lineClears: 8,
     colorBursts: 1,
@@ -1028,8 +1039,16 @@ test("guards leaderboard submit state against duplicate taps and auto-submit", (
   assert.strictEqual(state.canSubmit, false);
   assert.strictEqual(state.submitted, true);
 
+  state = RingzzleCore.resolveLeaderboardSubmitState(state, { type: "game-over" });
+  assert.strictEqual(state.submitted, true, "same game-over screen should stay submitted");
+  assert.strictEqual(state.canSubmit, false);
+
   state = RingzzleCore.resolveLeaderboardSubmitState(state, { type: "restart" });
   assert.strictEqual(state.canSubmit, false);
+  assert.strictEqual(state.submitted, false);
+
+  state = RingzzleCore.resolveLeaderboardSubmitState(state, { type: "game-over" });
+  assert.strictEqual(state.canSubmit, true, "future game-over screen can submit again");
   assert.strictEqual(state.submitted, false);
 });
 
@@ -1308,6 +1327,94 @@ test("refreshes in-game leaderboard state after successful submit", () => {
   assert.strictEqual(refreshed.entries.alltime, null);
   assert.strictEqual(refreshed.loadingScope, null);
   assert.strictEqual(refreshed.status, "Refreshing leaderboard...");
+});
+
+test("validates stricter Ringzzle submit bounds for v027", async () => {
+  const leaderboard = await import("../functions/api/leaderboard/_shared.mjs");
+  const valid = {
+    nickname: "Nova",
+    score: 999999,
+    bestClear: 16,
+    lineClears: 10000,
+    colorBursts: 10000,
+    maxUnlockedColors: 6,
+    gamesPlayed: 1000000,
+    browserPlayerId: "browser-abc",
+    clientVersion: "v027",
+  };
+
+  assert.strictEqual(leaderboard.validateSubmission(valid).ok, true);
+  assert.strictEqual(leaderboard.validateSubmission({ ...valid, score: 1000000 }).ok, false);
+  assert.strictEqual(leaderboard.validateSubmission({ ...valid, bestClear: 17 }).ok, false);
+  assert.strictEqual(leaderboard.validateSubmission({ ...valid, lineClears: -1 }).ok, false);
+  assert.strictEqual(leaderboard.validateSubmission({ ...valid, colorBursts: 10001 }).ok, false);
+  assert.strictEqual(leaderboard.validateSubmission({ ...valid, gamesPlayed: -1 }).ok, false);
+  assert.strictEqual(leaderboard.validateSubmission({ ...valid, maxUnlockedColors: 2 }).ok, false);
+  assert.strictEqual(leaderboard.validateSubmission({ ...valid, clientVersion: "latest" }).ok, false);
+});
+
+test("rate limits too-fast Ringzzle leaderboard submissions by browser player id", async () => {
+  const submit = await import("../functions/api/leaderboard/submit.js");
+  const now = new Date("2026-06-09T12:00:00.000Z");
+  const env = {
+    DB: {
+      prepare(sql) {
+        if (sql.includes("COUNT(*) AS count")) {
+          return {
+            bind(browserPlayerId, since) {
+              assert.strictEqual(browserPlayerId, "browser-secret");
+              assert.match(since, /^2026-06-09T11:59:5/);
+              return this;
+            },
+            async first() {
+              return { count: 1 };
+            },
+          };
+        }
+        throw new Error("rate-limited request should not insert");
+      },
+    },
+  };
+
+  const response = await submit.onRequest({
+    request: new Request("https://ringzzle.com/api/leaderboard/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nickname: "Nova",
+        score: 100,
+        browserPlayerId: "browser-secret",
+        clientVersion: "v027",
+      }),
+    }),
+    env,
+    now,
+  });
+  const data = await response.json();
+
+  assert.strictEqual(response.status, 429);
+  assert.strictEqual(data.ok, false);
+  assert.strictEqual(data.error, "rate_limited");
+  assert.ok(!Object.prototype.hasOwnProperty.call(data, "browserPlayerId"));
+});
+
+test("rejects oversized Ringzzle leaderboard submit JSON", async () => {
+  const submit = await import("../functions/api/leaderboard/submit.js");
+  const response = await submit.onRequest({
+    request: new Request("https://ringzzle.com/api/leaderboard/submit", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": "9000",
+      },
+      body: JSON.stringify({ nickname: "Nova", score: 1, browserPlayerId: "id", clientVersion: "v027" }),
+    }),
+    env: { DB: { prepare() { throw new Error("oversized request should not query D1"); } } },
+  });
+  const data = await response.json();
+
+  assert.strictEqual(response.status, 413);
+  assert.strictEqual(data.error, "payload_too_large");
 });
 
 (async () => {

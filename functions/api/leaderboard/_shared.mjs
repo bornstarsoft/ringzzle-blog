@@ -1,5 +1,5 @@
 const MAX_RETURNED_ENTRIES = 100;
-const MAX_SCORE = 1000000;
+const MAX_SCORE = 999999;
 const MAX_BEST_CLEAR = 16;
 const MAX_LINE_CLEARS = 10000;
 const MAX_COLOR_BURSTS = 10000;
@@ -127,7 +127,7 @@ export function validateSubmission(input) {
   }
 
   const clientVersion = String(valueFromBody(body, "clientVersion", "client_version", "") || "").trim();
-  if (!clientVersion || clientVersion.length > MAX_CLIENT_VERSION_LENGTH) {
+  if (!clientVersion || clientVersion.length > MAX_CLIENT_VERSION_LENGTH || !/^v\d{3}$/.test(clientVersion)) {
     return { ok: false, error: "Client version is outside the leaderboard range." };
   }
 
