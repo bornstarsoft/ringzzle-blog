@@ -6,7 +6,10 @@
       <h1>Ringzzle Leaderboard</h1>
       <p>Today and All-Time scores show real submitted entries only. Submit your score from the game-over screen.</p>
     </div>
-    <a class="ringzzle-play-link" href='{{ relURL "play/" }}'>Play Ringzzle</a>
+    <div class="leaderboard-actions">
+      <a class="ringzzle-play-link" href='{{ relURL "play/" }}'>Play Ringzzle</a>
+      <a class="btn" href='{{ relURL "/" }}'>Home</a>
+    </div>
   </div>
 
   <section class="ringzzle-leaderboard-panel" aria-labelledby="ringzzle-leaderboard-title">
@@ -38,7 +41,7 @@
     </div>
   </section>
 
-  <p class="ringzzle-leaderboard-note">No login. No email. Submit with a nickname from the game-over screen.</p>
+  <p class="ringzzle-leaderboard-note">Real submitted entries only. No login, no email, and no fake rankings.</p>
 </article>
 <link rel="stylesheet" href='{{ relURL "css/leaderboard.v001.css" }}' />
 <script src='{{ relURL "js/leaderboard.v001.js" }}' defer></script>

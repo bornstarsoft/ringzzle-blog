@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  {{ partial "head.html" . }}
+</head>
+
+<body>
+  <div class="site">
+    <header class="topbar">
+      <a class="brand" href='{{ relURL "/" }}'>
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-name">{{ .Site.Title }}</span>
+      </a>
+
+      <nav class="topnav" aria-label="Primary navigation">
+        {{ range .Site.Params.nav_menu }}
+        <a href="{{ .url | relURL }}">{{ .name }}</a>
+        {{ end }}
+      </nav>
+    </header>
+
+    <main class="main">
+      <div class="home-shell">
+        <section class="hero" aria-labelledby="ringzzle-home-title">
+          <div>
+            <p class="eyebrow">Play online</p>
+            <h1 id="ringzzle-home-title">Ringzzle</h1>
+            <p class="lead">Free color rings puzzle game.</p>
+            <p class="hero-copy">No install. Just play. Place colorful rings, clear lines, complete cells, and chase your best score.</p>
+
+            <div class="actions">
+              <a class="btn primary" href='{{ relURL "play/" }}'>Play Ringzzle</a>
+              <a class="btn" href='{{ relURL "leaderboard/" }}'>View Leaderboard</a>
+            </div>
+          </div>
+
+          <div class="game-preview" aria-label="Ringzzle board preview">
+            <div class="mini-board" aria-hidden="true">
+              <div class="mini-cell" style="--ring-color:#ff3366;--ring-color-2:#ffd02e;--ring-color-3:#24a8ff"><span></span></div>
+              <div class="mini-cell" style="--ring-color:#16e876;--ring-color-2:#ff3366;--ring-color-3:#a65cff"><span></span></div>
+              <div class="mini-cell" style="--ring-color:#24a8ff;--ring-color-2:#16e876;--ring-color-3:#ffd02e"><span></span></div>
+              <div class="mini-cell" style="--ring-color:#ffd02e;--ring-color-2:#24a8ff;--ring-color-3:#ff8a24"><span></span></div>
+              <div class="mini-cell" style="--ring-color:#a65cff;--ring-color-2:#35e6d0;--ring-color-3:#ff3366"><span></span></div>
+              <div class="mini-cell" style="--ring-color:#ff8a24;--ring-color-2:#a65cff;--ring-color-3:#16e876"><span></span></div>
+              <div class="mini-cell" style="--ring-color:#16e876;--ring-color-2:#ffd02e;--ring-color-3:#a65cff"><span></span></div>
+              <div class="mini-cell" style="--ring-color:#24a8ff;--ring-color-2:#ff8a24;--ring-color-3:#35e6d0"><span></span></div>
+              <div class="mini-cell" style="--ring-color:#ff3366;--ring-color-2:#16e876;--ring-color-3:#ffd02e"><span></span></div>
+            </div>
+            <ul class="preview-list">
+              <li>3x3 board with small, medium, and large ring slots.</li>
+              <li>Clear matching colors across rows, columns, and diagonals.</li>
+              <li>Complete a same-color cell for a Color Burst.</li>
+            </ul>
+          </div>
+        </section>
+
+        <div class="home-sections">
+          <section class="section" aria-labelledby="home-how-to-play">
+            <h2 id="home-how-to-play">How to play</h2>
+            <ul class="plain-list">
+              <li>Drag one ring from the bottom tray onto the board.</li>
+              <li>Each cell can hold one small, one medium, and one large ring.</li>
+              <li>Match color lines to clear rings and keep space open.</li>
+            </ul>
+          </section>
+
+          <section class="section" aria-labelledby="home-features">
+            <h2 id="home-features">Game features</h2>
+            <ul class="plain-list">
+              <li>Free browser play with no install.</li>
+              <li>Local high score plus anonymous leaderboard submission.</li>
+              <li>Sound toggle stays off until you tap it on.</li>
+            </ul>
+          </section>
+
+          <section class="section" aria-labelledby="home-mobile">
+            <h2 id="home-mobile">Mobile ready</h2>
+            <ul class="plain-list">
+              <li>Portrait-first layout for iPhone Safari.</li>
+              <li>Touch drag and quick restart controls.</li>
+              <li>No login, email, ads, or in-app purchases.</li>
+            </ul>
+          </section>
+        </div>
+
+        <section class="leaderboard-teaser" aria-labelledby="home-leaderboard">
+          <div>
+            <h2 id="home-leaderboard">Anonymous leaderboard</h2>
+            <p>Submit a nickname-only score after game over and compare real Today or All-Time entries. No fake rankings, no login, and no email.</p>
+          </div>
+          <div class="leaderboard-actions">
+            <a class="btn primary" href='{{ relURL "play/" }}'>Play Ringzzle</a>
+            <a class="btn" href='{{ relURL "leaderboard/" }}'>Leaderboard</a>
+          </div>
+        </section>
+
+        <section class="posts-teaser" aria-labelledby="home-tips">
+          <div>
+            <h2 id="home-tips">Tips and puzzle notes</h2>
+            <p>Ringzzle keeps the existing puzzle article archive available while the official game pages become the primary entry points.</p>
+            <ul class="posts-list">
+              {{ range first 3 (where .Site.RegularPages "Section" "posts") }}
+              <li><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
+              {{ end }}
+            </ul>
+          </div>
+          <a class="btn" href='{{ relURL "posts/" }}'>Browse Tips</a>
+        </section>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-links">
+        {{ range .Site.Params.footer_menu }}
+        <a href="{{ .url | relURL }}">{{ .name }}</a>
+        {{ end }}
+      </div>
+      <div class="footer-copy">© {{ now.Year }} Ringzzle</div>
+    </footer>
+  </div>
+</body>
+
+</html>

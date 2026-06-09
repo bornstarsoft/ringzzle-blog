@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v027.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v028.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -610,7 +610,7 @@ test("keeps sound off by default and requires an explicit user toggle", () => {
   assert.strictEqual(reloadState.userActivated, false);
 });
 
-test("recognizes only lightweight v027 sound event names", () => {
+test("recognizes only lightweight v028 sound event names", () => {
   ["place", "invalid", "line-clear", "color-burst", "game-over", "restart", "toggle-on", "toggle-off"].forEach((eventName) => {
     const cue = RingzzleCore.getSoundCueSpec(eventName);
     assert.strictEqual(cue.name, eventName);
@@ -672,8 +672,8 @@ test("hides tray rack and wells without removing tray hit areas", () => {
   assert.strictEqual(RingzzleCore.TRAY_VISUAL_STYLE.keepHitAreas, true);
 });
 
-test("formats v027 move feedback for placement, clears, combo, Color Burst, and game over", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v027");
+test("formats v028 move feedback for placement, clears, combo, Color Burst, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v028");
   assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),
@@ -1011,7 +1011,7 @@ test("builds anonymous leaderboard submit payload from completed game state", ()
     nickname: "Nova",
     score: 1230,
     browserPlayerId: "browser-secret",
-    clientVersion: "v027",
+    clientVersion: "v028",
     bestClear: 2,
     lineClears: 8,
     colorBursts: 1,
@@ -1148,6 +1148,24 @@ test("builds no-store cache-busted leaderboard read URLs", () => {
   assert.strictEqual(today, "/api/leaderboard?scope=today&v=12345");
   assert.strictEqual(alltime, "/api/leaderboard?scope=alltime&v=12345");
   assert.strictEqual(RingzzleCore.buildLeaderboardReadUrl("bad", 0), "/api/leaderboard?scope=today&v=0");
+});
+
+test("positions Home button left of Sound without crowding mobile controls", () => {
+  const homeLayout = RingzzleCore.calculateHomeButtonLayout({
+    width: 390,
+    margin: 16,
+    topY: 12,
+    homeButton: { width: 52, height: 34 },
+    soundButton: { x: 231, y: 14, width: 64, height: 34 },
+  });
+
+  assert.strictEqual(RingzzleCore.HOME_ROUTE, "/");
+  assert.strictEqual(homeLayout.label, "Home");
+  assert.strictEqual(homeLayout.route, "/");
+  assert.strictEqual(homeLayout.action, "navigate-home");
+  assert.ok(homeLayout.x >= 16, "Home button should stay inside left edge");
+  assert.ok(homeLayout.x + homeLayout.width + homeLayout.gap <= 231, "Home should stay left of Sound");
+  assert.strictEqual(homeLayout.y, 14);
 });
 
 test("positions Rank button under Restart and opens an in-game modal", () => {
@@ -1329,7 +1347,7 @@ test("refreshes in-game leaderboard state after successful submit", () => {
   assert.strictEqual(refreshed.status, "Refreshing leaderboard...");
 });
 
-test("validates stricter Ringzzle submit bounds for v027", async () => {
+test("validates stricter Ringzzle submit bounds for v028", async () => {
   const leaderboard = await import("../functions/api/leaderboard/_shared.mjs");
   const valid = {
     nickname: "Nova",
@@ -1340,7 +1358,7 @@ test("validates stricter Ringzzle submit bounds for v027", async () => {
     maxUnlockedColors: 6,
     gamesPlayed: 1000000,
     browserPlayerId: "browser-abc",
-    clientVersion: "v027",
+    clientVersion: "v028",
   };
 
   assert.strictEqual(leaderboard.validateSubmission(valid).ok, true);
@@ -1384,7 +1402,7 @@ test("rate limits too-fast Ringzzle leaderboard submissions by browser player id
         nickname: "Nova",
         score: 100,
         browserPlayerId: "browser-secret",
-        clientVersion: "v027",
+        clientVersion: "v028",
       }),
     }),
     env,
@@ -1407,7 +1425,7 @@ test("rejects oversized Ringzzle leaderboard submit JSON", async () => {
         "Content-Type": "application/json",
         "Content-Length": "9000",
       },
-      body: JSON.stringify({ nickname: "Nova", score: 1, browserPlayerId: "id", clientVersion: "v027" }),
+      body: JSON.stringify({ nickname: "Nova", score: 1, browserPlayerId: "id", clientVersion: "v028" }),
     }),
     env: { DB: { prepare() { throw new Error("oversized request should not query D1"); } } },
   });

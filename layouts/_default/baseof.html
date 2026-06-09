@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  {{ partial "head.html" . }}
+</head>
+
+<body>
+  <div class="site">
+    <header class="topbar">
+      <a class="brand" href='{{ relURL "/" }}'>
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-name">{{ .Site.Title }}</span>
+      </a>
+
+      <nav class="topnav" aria-label="Primary navigation">
+        {{ range .Site.Params.nav_menu }}
+        <a href="{{ .url | relURL }}">{{ .name }}</a>
+        {{ end }}
+      </nav>
+    </header>
+
+    <main class="main">
+      {{ block "main" . }}{{ end }}
+    </main>
+
+    <footer class="footer">
+      <div class="footer-links">
+        {{ range .Site.Params.footer_menu }}
+        <a href="{{ .url | relURL }}">{{ .name }}</a>
+        {{ end }}
+      </div>
+      <div class="footer-copy">© {{ now.Year }} Ringzzle</div>
+    </footer>
+  </div>
+</body>
+
+</html>

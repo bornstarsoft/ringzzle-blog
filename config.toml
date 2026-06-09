@@ -7,8 +7,43 @@ theme = "ananke"
 enableRobotsTXT = true
 buildFuture = false
 
+[sitemap]
+changefreq = "daily"
+filename = "sitemap.xml"
+priority = 0.5
+
 [pagination]
 pagerSize = 10
 
 [params]
+  description = "Free color rings puzzle game. No install. Just play."
+  home_seo_title = "Ringzzle — Free Color Rings Puzzle Game Online"
   mainSections = ["posts"]
+
+[[params.nav_menu]]
+  name = "Home"
+  url = "/"
+
+[[params.nav_menu]]
+  name = "Play"
+  url = "/play/"
+
+[[params.nav_menu]]
+  name = "Leaderboard"
+  url = "/leaderboard/"
+
+[[params.nav_menu]]
+  name = "How to Play"
+  url = "/how-to-play/"
+
+[[params.nav_menu]]
+  name = "Tips"
+  url = "/posts/"
+
+[[params.footer_menu]]
+  name = "Privacy"
+  url = "/privacy/"
+
+[[params.footer_menu]]
+  name = "Terms"
+  url = "/terms/"

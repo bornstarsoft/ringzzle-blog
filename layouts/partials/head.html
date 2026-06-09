@@ -1,0 +1,17 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{{- $title := .Site.Title -}}
+{{- if .IsHome -}}
+{{- $title = .Site.Params.home_seo_title | default .Site.Title -}}
+{{- else -}}
+{{- $title = printf "%s · %s" .Title .Site.Title -}}
+{{- end -}}
+{{- with .Params.seo_title -}}
+{{- $title = . -}}
+{{- end -}}
+{{- $description := .Description | default .Site.Params.description -}}
+<title>{{ $title }}</title>
+<meta name="description" content="{{ $description }}">
+<meta name="theme-color" content="#08131f">
+<link rel="canonical" href="{{ .Permalink }}">
+<link rel="stylesheet" href='{{ printf "%s?v=game-first-v028" (relURL "css/site.css") }}'>

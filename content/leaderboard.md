@@ -1,7 +1,7 @@
 ---
 title: "Ringzzle Leaderboard"
 seo_title: "Ringzzle Leaderboard"
-description: "Anonymous Ringzzle leaderboard with Today and All-Time scores. Read-only while score submission is being prepared."
+description: "Anonymous Ringzzle leaderboard with real submitted Today and All-Time scores."
 slug: "leaderboard"
 type: "leaderboard"
 sitemap:
