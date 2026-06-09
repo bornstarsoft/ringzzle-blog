@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v015.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v016.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -570,7 +570,7 @@ test("keeps sound off by default and requires an explicit user toggle", () => {
   assert.strictEqual(reloadState.userActivated, false);
 });
 
-test("recognizes only lightweight v015 sound event names", () => {
+test("recognizes only lightweight v016 sound event names", () => {
   ["place", "invalid", "line-clear", "color-burst", "game-over", "restart", "toggle-on", "toggle-off"].forEach((eventName) => {
     const cue = RingzzleCore.getSoundCueSpec(eventName);
     assert.strictEqual(cue.name, eventName);
@@ -594,7 +594,7 @@ test("makes Color Burst sound distinct without enabling sound by default", () =>
   assert.notStrictEqual(colorBurst.frequency, lineClear.frequency);
 });
 
-test("keeps larger tray rings inside target mobile tray wells", () => {
+test("keeps full-scale tray rings inside target mobile tray bounds", () => {
   [
     [390, 844],
     [393, 852],
@@ -606,14 +606,22 @@ test("keeps larger tray rings inside target mobile tray wells", () => {
     const layout = RingzzleCore.calculateLayoutMetrics(width, height);
     const metrics = RingzzleCore.calculateTrayRingRenderMetrics(layout);
 
-    assert.ok(metrics.ringScale >= 0.94, `${width}x${height} tray ring scale should be close to full size`);
-    assert.ok(metrics.largestRingDiameter < metrics.wellSize, `${width}x${height} largest ring should fit inside well`);
+    assert.strictEqual(metrics.ringScale, 1, `${width}x${height} idle tray ring scale should be full size`);
+    assert.strictEqual(metrics.dragRingScale, metrics.ringScale, `${width}x${height} drag scale should match idle scale`);
+    assert.strictEqual(metrics.dragRingCellSize, metrics.ringCellSize, `${width}x${height} drag ring should not jump in size`);
+    assert.ok(metrics.largestRingDiameter < metrics.hitBoxSize, `${width}x${height} largest ring should fit inside tray hit bounds`);
     assert.ok(metrics.margin >= 4, `${width}x${height} largest ring should keep comfortable well margin`);
   });
 });
 
-test("formats v015 move feedback for placement, clears, combo, Color Burst, and game over", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v015");
+test("hides tray rack and wells without removing tray hit areas", () => {
+  assert.strictEqual(RingzzleCore.TRAY_VISUAL_STYLE.showRack, false);
+  assert.strictEqual(RingzzleCore.TRAY_VISUAL_STYLE.showWells, false);
+  assert.strictEqual(RingzzleCore.TRAY_VISUAL_STYLE.keepHitAreas, true);
+});
+
+test("formats v016 move feedback for placement, clears, combo, Color Burst, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v016");
   assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),
