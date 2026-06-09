@@ -16,16 +16,50 @@ export async function onRequestGet({ request, env }) {
   const generatedAt = new Date().toISOString();
 
   try {
-    const scopedWhere = scope === "today" ? "AND day_key = ?" : "";
+    const scopedWhere = scope === "today" ? "AND s.day_key = ?" : "";
+    const betterScopedWhere = scope === "today" ? "AND better.day_key = s.day_key" : "";
+    const nicknameKey = "COALESCE(NULLIF(LOWER(TRIM(s.nickname_normalized)), ''), LOWER(TRIM(s.nickname)))";
+    const betterNicknameKey = "COALESCE(NULLIF(LOWER(TRIM(better.nickname_normalized)), ''), LOWER(TRIM(better.nickname)))";
     const query = `
-      SELECT id, nickname, nickname_normalized, score, best_clear, line_clears,
-             color_bursts, max_unlocked_colors, created_at
-      FROM ringzzle_scores
-      WHERE rejected = 0
+      SELECT s.id, s.nickname, s.nickname_normalized, s.score, s.best_clear, s.line_clears,
+             s.color_bursts, s.max_unlocked_colors, s.created_at
+      FROM ringzzle_scores s
+      WHERE s.rejected = 0
         ${scopedWhere}
-      ORDER BY score DESC, best_clear DESC, line_clears DESC, color_bursts DESC,
-               max_unlocked_colors DESC, created_at ASC
-      LIMIT 500
+        AND NOT EXISTS (
+          SELECT 1
+          FROM ringzzle_scores better
+          WHERE better.rejected = 0
+            ${betterScopedWhere}
+            AND ${betterNicknameKey} = ${nicknameKey}
+            AND (
+              better.score > s.score
+              OR (better.score = s.score AND better.best_clear > s.best_clear)
+              OR (better.score = s.score AND better.best_clear = s.best_clear AND better.line_clears > s.line_clears)
+              OR (better.score = s.score AND better.best_clear = s.best_clear AND better.line_clears = s.line_clears AND better.color_bursts > s.color_bursts)
+              OR (better.score = s.score AND better.best_clear = s.best_clear AND better.line_clears = s.line_clears AND better.color_bursts = s.color_bursts AND better.max_unlocked_colors > s.max_unlocked_colors)
+              OR (
+                better.score = s.score
+                AND better.best_clear = s.best_clear
+                AND better.line_clears = s.line_clears
+                AND better.color_bursts = s.color_bursts
+                AND better.max_unlocked_colors = s.max_unlocked_colors
+                AND better.created_at < s.created_at
+              )
+              OR (
+                better.score = s.score
+                AND better.best_clear = s.best_clear
+                AND better.line_clears = s.line_clears
+                AND better.color_bursts = s.color_bursts
+                AND better.max_unlocked_colors = s.max_unlocked_colors
+                AND better.created_at = s.created_at
+                AND better.id < s.id
+              )
+            )
+        )
+      ORDER BY s.score DESC, s.best_clear DESC, s.line_clears DESC, s.color_bursts DESC,
+               s.max_unlocked_colors DESC, s.created_at ASC
+      LIMIT 100
     `;
     const result = scope === "today"
       ? await env.DB.prepare(query).bind(dayKey).all()

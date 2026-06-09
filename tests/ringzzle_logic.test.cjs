@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v024.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v025.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -610,7 +610,7 @@ test("keeps sound off by default and requires an explicit user toggle", () => {
   assert.strictEqual(reloadState.userActivated, false);
 });
 
-test("recognizes only lightweight v024 sound event names", () => {
+test("recognizes only lightweight v025 sound event names", () => {
   ["place", "invalid", "line-clear", "color-burst", "game-over", "restart", "toggle-on", "toggle-off"].forEach((eventName) => {
     const cue = RingzzleCore.getSoundCueSpec(eventName);
     assert.strictEqual(cue.name, eventName);
@@ -672,8 +672,8 @@ test("hides tray rack and wells without removing tray hit areas", () => {
   assert.strictEqual(RingzzleCore.TRAY_VISUAL_STYLE.keepHitAreas, true);
 });
 
-test("formats v024 move feedback for placement, clears, combo, Color Burst, and game over", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v024");
+test("formats v025 move feedback for placement, clears, combo, Color Burst, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v025");
   assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),
@@ -1000,7 +1000,7 @@ test("builds anonymous leaderboard submit payload from completed game state", ()
     nickname: "Nova",
     score: 1230,
     browserPlayerId: "browser-secret",
-    clientVersion: "v024",
+    clientVersion: "v025",
     bestClear: 2,
     lineClears: 8,
     colorBursts: 1,
@@ -1033,6 +1033,50 @@ test("guards leaderboard submit state against duplicate taps and auto-submit", (
   assert.strictEqual(state.submitted, false);
 });
 
+test("uses Blockzzle-style prompt nickname flow without inline input dependency", () => {
+  assert.strictEqual(RingzzleCore.LEADERBOARD_NICKNAME_ENTRY_MODE, "prompt");
+  assert.strictEqual(RingzzleCore.LEADERBOARD_INLINE_NICKNAME_INPUT, false);
+
+  const stored = RingzzleCore.resolveLeaderboardNicknameForSubmit({
+    storedNickname: " Nova ",
+    promptProvider: () => {
+      throw new Error("stored nickname should not prompt");
+    },
+  });
+  assert.deepStrictEqual(stored, {
+    ok: true,
+    nickname: "Nova",
+    cancelled: false,
+    prompted: false,
+    shouldStore: false,
+    message: "",
+  });
+
+  const prompted = RingzzleCore.resolveLeaderboardNicknameForSubmit({
+    storedNickname: "",
+    promptProvider: () => " Ring   Master ",
+  });
+  assert.strictEqual(prompted.ok, true);
+  assert.strictEqual(prompted.nickname, "Ring Master");
+  assert.strictEqual(prompted.prompted, true);
+  assert.strictEqual(prompted.shouldStore, true);
+
+  const cancelled = RingzzleCore.resolveLeaderboardNicknameForSubmit({
+    storedNickname: "",
+    promptProvider: () => null,
+  });
+  assert.strictEqual(cancelled.ok, false);
+  assert.strictEqual(cancelled.cancelled, true);
+
+  const invalid = RingzzleCore.resolveLeaderboardNicknameForSubmit({
+    storedNickname: "",
+    promptProvider: () => "!",
+  });
+  assert.strictEqual(invalid.ok, false);
+  assert.strictEqual(invalid.cancelled, false);
+  assert.match(invalid.message, /2-16|letters/i);
+});
+
 test("positions Rank button under Restart and opens an in-game modal", () => {
   const layout = RingzzleCore.calculateLayoutMetrics(390, 720);
   const rankLayout = RingzzleCore.calculateRankButtonLayout({
@@ -1054,7 +1098,7 @@ test("positions Rank button under Restart and opens an in-game modal", () => {
   assert.ok(rankLayout.x + rankLayout.width <= layout.width - layout.margin + 1, "rank button should stay inside right edge");
 });
 
-test("keeps game-over submit controls clear of Restart on mobile", () => {
+test("keeps prompt-based game-over leaderboard controls compact on mobile", () => {
   [
     { width: 390, height: 844 },
     { width: 393, height: 852 },
@@ -1064,29 +1108,14 @@ test("keeps game-over submit controls clear of Restart on mobile", () => {
     { width: 430, height: 780 },
   ].forEach((viewport) => {
     const layout = RingzzleCore.calculateLayoutMetrics(viewport.width, viewport.height);
-    const panel = RingzzleCore.calculateGameOverSubmitPanelLayout({ layout, keyboardVisible: false });
+    const panel = RingzzleCore.calculateGameOverPromptPanelLayout({ layout });
 
-    assert.ok(panel.top >= panel.gameOverDetailBottom, `submit panel should sit below game-over stats at ${viewport.width}x${viewport.height}`);
-    assert.ok(panel.bottom + 8 <= panel.restartTop, `submit panel should clear restart at ${viewport.width}x${viewport.height}`);
-    assert.ok(panel.top >= 0, `submit panel top should fit at ${viewport.width}x${viewport.height}`);
-    assert.ok(panel.bottom <= viewport.height - 10, `submit panel bottom should fit at ${viewport.width}x${viewport.height}`);
-    assert.ok(panel.maxHeight >= 132, `submit panel should have usable height at ${viewport.width}x${viewport.height}`);
+    assert.ok(panel.panelTop >= 8, `game-over panel top should fit at ${viewport.width}x${viewport.height}`);
+    assert.ok(panel.panelBottom <= viewport.height - 8, `game-over panel bottom should fit at ${viewport.width}x${viewport.height}`);
+    assert.ok(panel.submitButton.bottom + 6 <= panel.todayButton.y, `submit should clear tabs at ${viewport.width}x${viewport.height}`);
+    assert.ok(panel.leaderboardText.y < panel.submitStatus.y, `leaderboard preview should sit above status at ${viewport.width}x${viewport.height}`);
+    assert.ok(panel.submitStatus.y + 18 <= panel.playAgainButton.y, `status should clear Play Again at ${viewport.width}x${viewport.height}`);
   });
-});
-
-test("keeps nickname input and submit visible in keyboard compact mode", () => {
-  const layout = RingzzleCore.calculateLayoutMetrics(390, 720);
-  const panel = RingzzleCore.calculateGameOverSubmitPanelLayout({
-    layout,
-    keyboardVisible: true,
-    visualViewportHeight: 430,
-  });
-
-  assert.strictEqual(panel.keyboardVisible, true);
-  assert.ok(panel.top >= 8, "keyboard panel top should remain visible");
-  assert.ok(panel.inputBottom <= panel.visibleBottom, "nickname input should remain above keyboard viewport");
-  assert.ok(panel.submitBottom <= panel.visibleBottom, "submit button should remain above keyboard viewport");
-  assert.ok(panel.bottom <= panel.visibleBottom, "panel should stay inside visible keyboard viewport");
 });
 
 test("exposes Today and All-Time leaderboard tabs for in-game flow", () => {
@@ -1117,13 +1146,88 @@ test("keeps in-game leaderboard modal inside compact mobile viewports", () => {
 
 test("keeps game-over leaderboard controls separate from nickname submit form", () => {
   const layout = RingzzleCore.calculateLayoutMetrics(390, 720);
-  const gameOver = RingzzleCore.calculateGameOverLeaderboardLayout({ layout });
-  const submit = RingzzleCore.calculateGameOverSubmitPanelLayout({ layout });
+  const gameOver = RingzzleCore.calculateGameOverPromptPanelLayout({ layout });
 
   assert.ok(gameOver.todayButton.y === gameOver.allTimeButton.y, "game-over scope buttons should align");
-  assert.ok(gameOver.listBottom < submit.top, "leaderboard preview should sit above DOM nickname form");
-  assert.ok(submit.bottom + 8 <= submit.restartTop, "submit form should clear restart");
-  assert.ok(gameOver.restartTop === submit.restartTop, "canvas restart and DOM submit layout should share restart anchor");
+  assert.ok(gameOver.nickname.y > gameOver.divider.y, "nickname line should sit in leaderboard section");
+  assert.ok(gameOver.submitButton.bottom + 6 <= gameOver.todayButton.y, "submit should clear tabs");
+  assert.ok(gameOver.leaderboardText.y < gameOver.submitStatus.y, "leaderboard preview should sit above submit status");
+  assert.ok(gameOver.playAgainButton.y > gameOver.submitStatus.y, "Play Again should sit below submit status");
+});
+
+test("keeps Today and All-Time read API dedupe consistent on first-day data", async () => {
+  const api = await import("../functions/api/leaderboard/index.js");
+  const rows = [
+    {
+      id: "a",
+      nickname: "Nova",
+      nickname_normalized: "nova",
+      score: 300,
+      best_clear: 1,
+      line_clears: 2,
+      color_bursts: 0,
+      max_unlocked_colors: 4,
+      created_at: "2026-06-09T01:00:00.000Z",
+      rejected: 0,
+    },
+    {
+      id: "b",
+      nickname: " nova ",
+      nickname_normalized: "nova",
+      score: 500,
+      best_clear: 1,
+      line_clears: 2,
+      color_bursts: 0,
+      max_unlocked_colors: 4,
+      created_at: "2026-06-09T02:00:00.000Z",
+      rejected: 0,
+    },
+    {
+      id: "c",
+      nickname: "Orbit",
+      nickname_normalized: "orbit",
+      score: 450,
+      best_clear: 2,
+      line_clears: 5,
+      color_bursts: 1,
+      max_unlocked_colors: 5,
+      created_at: "2026-06-09T00:30:00.000Z",
+      rejected: 0,
+    },
+  ];
+  const env = {
+    DB: {
+      prepare(sql) {
+        assert.ok(sql.includes("NOT EXISTS"), "read API should dedupe best nickname rows in SQL");
+        assert.ok(!sql.includes("browser_player_id"), "public read query must not select browser player id");
+        return {
+          bind() {
+            return this;
+          },
+          async all() {
+            return { results: rows };
+          },
+        };
+      },
+    },
+  };
+
+  const todayResponse = await api.onRequestGet({
+    request: new Request("https://ringzzle.com/api/leaderboard?scope=today"),
+    env,
+  });
+  const allTimeResponse = await api.onRequestGet({
+    request: new Request("https://ringzzle.com/api/leaderboard?scope=alltime"),
+    env,
+  });
+  const today = await todayResponse.json();
+  const alltime = await allTimeResponse.json();
+
+  assert.deepStrictEqual(today.entries, alltime.entries);
+  assert.strictEqual(today.entries.length, 2);
+  assert.strictEqual(today.entries[0].nickname.trim().toLowerCase(), "nova");
+  assert.strictEqual(today.entries[0].score, 500);
+  assert.ok(!Object.prototype.hasOwnProperty.call(today.entries[0], "browserPlayerId"));
 });
 
 test("refreshes in-game leaderboard state after successful submit", () => {

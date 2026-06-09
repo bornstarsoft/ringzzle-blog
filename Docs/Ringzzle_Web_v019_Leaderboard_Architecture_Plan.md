@@ -1,6 +1,6 @@
 # Ringzzle Web v019 Leaderboard Architecture Plan
 
-Status: updated after v22 game-over submission UI implementation. v020 adds a D1 migration, read-only Cloudflare Pages Function, and read-only `/leaderboard/` page. v21 adds the submit API. v22 adds explicit user-triggered game-over nickname submission UI. Automatic score submission remains deferred.
+Status: updated after v25 Blockzzle nickname-flow adoption. v020 adds a D1 migration, read-only Cloudflare Pages Function, and read-only `/leaderboard/` page. v21 adds the submit API. v22 adds explicit user-triggered game-over nickname submission UI. v24 moves Rank and game-over leaderboard viewing into in-game modal/panel flow. v25 replaces the inline nickname field with Blockzzle-style prompt entry and aligns read API dedupe. Automatic score submission remains deferred.
 
 ## References Inspected
 
@@ -54,6 +54,14 @@ Implemented in v22:
 - Local nickname preference.
 - `/leaderboard/` link.
 - No rank claim after submit.
+
+Implemented in v25:
+
+- Blockzzle-style native prompt nickname entry from the game-over panel.
+- No inline focused nickname input as the primary submit method.
+- Stored local nickname reused through `ringzzleLeaderboardNicknameV1`.
+- In-game nickname edit line opens the prompt.
+- Read API uses consistent best-per-normalized-nickname SQL dedupe for Today and All-Time.
 
 Still deferred:
 
