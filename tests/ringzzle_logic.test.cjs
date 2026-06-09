@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v013.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v014.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -553,8 +553,36 @@ test("keeps Color Burst source-to-target cue geometry short and inside board bou
   assert.strictEqual(cue.targetPulses.length, 5);
 });
 
-test("formats v013 move feedback for placement, clears, combo, Color Burst, and game over", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v013");
+test("keeps sound off by default and requires an explicit user toggle", () => {
+  const sound = RingzzleCore.createSoundState();
+
+  assert.strictEqual(sound.enabled, false);
+  assert.strictEqual(sound.userActivated, false);
+  assert.strictEqual(RingzzleCore.getSoundButtonLabel(sound), "Sound Off");
+
+  const enabled = RingzzleCore.resolveSoundToggleState(sound, { userGesture: true, audioReady: true });
+  assert.strictEqual(enabled.enabled, true);
+  assert.strictEqual(enabled.userActivated, true);
+  assert.strictEqual(RingzzleCore.getSoundButtonLabel(enabled), "Sound On");
+
+  const reloadState = RingzzleCore.createSoundState({ storedPreference: true });
+  assert.strictEqual(reloadState.enabled, false, "stored preference must not auto-enable sound on reload");
+  assert.strictEqual(reloadState.userActivated, false);
+});
+
+test("recognizes only lightweight v014 sound event names", () => {
+  ["place", "invalid", "line-clear", "color-burst", "game-over", "restart", "toggle-on", "toggle-off"].forEach((eventName) => {
+    const cue = RingzzleCore.getSoundCueSpec(eventName);
+    assert.strictEqual(cue.name, eventName);
+    assert.ok(cue.duration <= 0.22, `${eventName} cue should be short`);
+    assert.ok(cue.gain <= 0.08, `${eventName} cue should stay soft`);
+  });
+
+  assert.strictEqual(RingzzleCore.getSoundCueSpec("unknown"), null);
+});
+
+test("formats v014 move feedback for placement, clears, combo, Color Burst, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v014");
   assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),
