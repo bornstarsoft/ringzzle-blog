@@ -69,5 +69,13 @@
     tab.addEventListener("click", () => loadLeaderboard(tab.dataset.scope));
   });
 
-  loadLeaderboard("today");
+  const initialScope = (() => {
+    try {
+      return new URLSearchParams(window.location.search).get("scope") === "alltime" ? "alltime" : "today";
+    } catch (error) {
+      return "today";
+    }
+  })();
+
+  loadLeaderboard(initialScope);
 })();

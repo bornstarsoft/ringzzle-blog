@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v022.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v023.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -610,7 +610,7 @@ test("keeps sound off by default and requires an explicit user toggle", () => {
   assert.strictEqual(reloadState.userActivated, false);
 });
 
-test("recognizes only lightweight v022 sound event names", () => {
+test("recognizes only lightweight v023 sound event names", () => {
   ["place", "invalid", "line-clear", "color-burst", "game-over", "restart", "toggle-on", "toggle-off"].forEach((eventName) => {
     const cue = RingzzleCore.getSoundCueSpec(eventName);
     assert.strictEqual(cue.name, eventName);
@@ -672,8 +672,8 @@ test("hides tray rack and wells without removing tray hit areas", () => {
   assert.strictEqual(RingzzleCore.TRAY_VISUAL_STYLE.keepHitAreas, true);
 });
 
-test("formats v022 move feedback for placement, clears, combo, Color Burst, and game over", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v022");
+test("formats v023 move feedback for placement, clears, combo, Color Burst, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v023");
   assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),
@@ -1000,7 +1000,7 @@ test("builds anonymous leaderboard submit payload from completed game state", ()
     nickname: "Nova",
     score: 1230,
     browserPlayerId: "browser-secret",
-    clientVersion: "v022",
+    clientVersion: "v023",
     bestClear: 2,
     lineClears: 8,
     colorBursts: 1,
@@ -1031,6 +1031,67 @@ test("guards leaderboard submit state against duplicate taps and auto-submit", (
   state = RingzzleCore.resolveLeaderboardSubmitState(state, { type: "restart" });
   assert.strictEqual(state.canSubmit, false);
   assert.strictEqual(state.submitted, false);
+});
+
+test("positions Rank button under Restart without covering the board", () => {
+  const layout = RingzzleCore.calculateLayoutMetrics(390, 720);
+  const rankLayout = RingzzleCore.calculateRankButtonLayout({
+    width: layout.width,
+    margin: layout.margin,
+    topY: layout.topY,
+    restartButton: { x: 304, y: 12, width: 70, height: 34 },
+    buttonWidth: 50,
+    buttonHeight: 30,
+    boardTop: layout.boardOrigin.y,
+  });
+
+  assert.strictEqual(RingzzleCore.LEADERBOARD_ROUTE, "/leaderboard/");
+  assert.strictEqual(rankLayout.label, "Rank");
+  assert.ok(rankLayout.y > 12 + 30, "rank button should sit below restart");
+  assert.ok(rankLayout.y + rankLayout.height <= layout.boardOrigin.y - 8, "rank button should clear board");
+  assert.ok(rankLayout.x + rankLayout.width <= layout.width - layout.margin + 1, "rank button should stay inside right edge");
+});
+
+test("keeps game-over submit controls clear of Restart on mobile", () => {
+  [
+    { width: 390, height: 844 },
+    { width: 393, height: 852 },
+    { width: 430, height: 932 },
+    { width: 390, height: 720 },
+    { width: 393, height: 735 },
+    { width: 430, height: 780 },
+  ].forEach((viewport) => {
+    const layout = RingzzleCore.calculateLayoutMetrics(viewport.width, viewport.height);
+    const panel = RingzzleCore.calculateGameOverSubmitPanelLayout({ layout, keyboardVisible: false });
+
+    assert.ok(panel.top >= panel.gameOverDetailBottom, `submit panel should sit below game-over stats at ${viewport.width}x${viewport.height}`);
+    assert.ok(panel.bottom + 8 <= panel.restartTop, `submit panel should clear restart at ${viewport.width}x${viewport.height}`);
+    assert.ok(panel.top >= 0, `submit panel top should fit at ${viewport.width}x${viewport.height}`);
+    assert.ok(panel.bottom <= viewport.height - 10, `submit panel bottom should fit at ${viewport.width}x${viewport.height}`);
+    assert.ok(panel.maxHeight >= 132, `submit panel should have usable height at ${viewport.width}x${viewport.height}`);
+  });
+});
+
+test("keeps nickname input and submit visible in keyboard compact mode", () => {
+  const layout = RingzzleCore.calculateLayoutMetrics(390, 720);
+  const panel = RingzzleCore.calculateGameOverSubmitPanelLayout({
+    layout,
+    keyboardVisible: true,
+    visualViewportHeight: 430,
+  });
+
+  assert.strictEqual(panel.keyboardVisible, true);
+  assert.ok(panel.top >= 8, "keyboard panel top should remain visible");
+  assert.ok(panel.inputBottom <= panel.visibleBottom, "nickname input should remain above keyboard viewport");
+  assert.ok(panel.submitBottom <= panel.visibleBottom, "submit button should remain above keyboard viewport");
+  assert.ok(panel.bottom <= panel.visibleBottom, "panel should stay inside visible keyboard viewport");
+});
+
+test("exposes Today and All-Time leaderboard labels for mobile game-over flow", () => {
+  assert.deepStrictEqual(RingzzleCore.LEADERBOARD_SCOPE_LINKS, [
+    { label: "Today", href: "/leaderboard/?scope=today" },
+    { label: "All-Time", href: "/leaderboard/?scope=alltime" },
+  ]);
 });
 
 (async () => {
