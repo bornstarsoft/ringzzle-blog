@@ -1,7 +1,7 @@
 ---
 title: "How to Play Ringzzle"
 seo_title: "How to Play Ringzzle — Color Rings Puzzle Guide"
-description: "Learn how to play Ringzzle: place small, medium, and large color rings, clear color lines, trigger Color Burst, and submit anonymous leaderboard scores."
+description: "Learn how to play Ringzzle, a free online color rings puzzle game with color line clears, Color Burst, local high score, and anonymous leaderboard scores."
 slug: "how-to-play"
 type: "page"
 sitemap:
@@ -11,7 +11,7 @@ sitemap:
 
 Ringzzle is a free color rings puzzle game for quick browser play. No install, account, or email is required.
 
-[Play Ringzzle](/play/)
+[Play Ringzzle](/play/) or [view the leaderboard](/leaderboard/).
 
 ## Board and tray
 
@@ -41,4 +41,8 @@ Valid placements add score. Line clears, combo clears, and Color Burst add bonus
 
 Ringzzle stores your local high score in your browser. After game over, you can optionally submit a nickname-only score to the anonymous leaderboard. There is no login, no email, and no fake ranking data.
 
-[View Leaderboard](/leaderboard/)
+## Ready to play
+
+Start a run, keep the board open, and look for Color Burst chances when a cell can hold all three same-color rings.
+
+[Play Ringzzle](/play/) or [view the leaderboard](/leaderboard/).

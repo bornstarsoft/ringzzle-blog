@@ -4,7 +4,7 @@
     <div>
       <p class="ringzzle-eyebrow">Anonymous leaderboard</p>
       <h1>Ringzzle Leaderboard</h1>
-      <p>Today and All-Time scores show real submitted entries only. Submit your score from the game-over screen.</p>
+      <p>Today and All-Time scores show real submitted entries only. Submit a nickname-only score from the game-over screen. No login or email required.</p>
     </div>
     <div class="leaderboard-actions">
       <a class="ringzzle-play-link" href='{{ relURL "play/" }}'>Play Ringzzle</a>
@@ -16,8 +16,8 @@
     <div class="ringzzle-leaderboard-head">
       <h2 id="ringzzle-leaderboard-title">Top Scores</h2>
       <div class="ringzzle-leaderboard-tabs" role="group" aria-label="Leaderboard scope">
-        <button type="button" class="is-active" data-scope="today">Today</button>
-        <button type="button" data-scope="alltime">All-Time</button>
+        <button type="button" class="is-active" data-scope="today">Today Top 100</button>
+        <button type="button" data-scope="alltime">All-Time Top 100</button>
       </div>
     </div>
 
@@ -41,7 +41,7 @@
     </div>
   </section>
 
-  <p class="ringzzle-leaderboard-note">Real submitted entries only. No login, no email, and no fake rankings.</p>
+  <p class="ringzzle-leaderboard-note">Real submitted entries only. No login, no email, no ads, and no fake rankings. If the leaderboard is unavailable, local browser stats still work inside the game.</p>
 </article>
 <link rel="stylesheet" href='{{ relURL "css/leaderboard.v001.css" }}' />
 <script src='{{ relURL "js/leaderboard.v001.js" }}' defer></script>

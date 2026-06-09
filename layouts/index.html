@@ -27,11 +27,12 @@
             <p class="eyebrow">Play online</p>
             <h1 id="ringzzle-home-title">Ringzzle</h1>
             <p class="lead">Free color rings puzzle game.</p>
-            <p class="hero-copy">No install. Just play. Place colorful rings, clear lines, complete cells, and chase your best score.</p>
+            <p class="hero-copy">No install. Just play. Match colors across rows, columns, and diagonals, trigger Color Burst, and submit an anonymous score when the run ends.</p>
 
             <div class="actions">
               <a class="btn primary" href='{{ relURL "play/" }}'>Play Ringzzle</a>
               <a class="btn" href='{{ relURL "leaderboard/" }}'>View Leaderboard</a>
+              <a class="text-link" href='{{ relURL "how-to-play/" }}'>How to Play</a>
             </div>
           </div>
 
@@ -51,6 +52,7 @@
               <li>3x3 board with small, medium, and large ring slots.</li>
               <li>Clear matching colors across rows, columns, and diagonals.</li>
               <li>Complete a same-color cell for a Color Burst.</li>
+              <li>Chase your local best or submit to the anonymous leaderboard.</li>
             </ul>
           </div>
         </section>
@@ -63,6 +65,7 @@
               <li>Each cell can hold one small, one medium, and one large ring.</li>
               <li>Match color lines to clear rings and keep space open.</li>
             </ul>
+            <p class="section-link"><a href='{{ relURL "how-to-play/" }}'>Read the full rules</a></p>
           </section>
 
           <section class="section" aria-labelledby="home-features">
@@ -98,7 +101,7 @@
         <section class="posts-teaser" aria-labelledby="home-tips">
           <div>
             <h2 id="home-tips">Tips and puzzle notes</h2>
-            <p>Ringzzle keeps the existing puzzle article archive available while the official game pages become the primary entry points.</p>
+            <p>Read puzzle notes and browser-game articles, then jump back into Ringzzle when you are ready to play.</p>
             <ul class="posts-list">
               {{ range first 3 (where .Site.RegularPages "Section" "posts") }}
               <li><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>

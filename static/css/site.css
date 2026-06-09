@@ -206,6 +206,15 @@ a {
   color: #07131e;
 }
 
+.text-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: #a9f5eb;
+  font-weight: 900;
+  text-decoration: none;
+}
+
 .btn:hover,
 .ringzzle-play-link:hover {
   transform: translateY(-1px);
@@ -300,6 +309,16 @@ a {
   gap: 9px;
   margin: 0;
   padding-left: 18px;
+}
+
+.section-link {
+  margin: 14px 0 0;
+}
+
+.section-link a {
+  color: #a9f5eb;
+  font-weight: 900;
+  text-decoration: none;
 }
 
 .leaderboard-teaser,
