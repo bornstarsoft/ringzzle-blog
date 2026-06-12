@@ -665,8 +665,11 @@ a {
   }
 
   .home-game-frame {
+    width: min(90vw, 400px);
+    max-width: 100%;
     height: min(744px, calc(100dvh - 96px));
     min-height: 610px;
+    margin-inline: auto;
     margin-top: 12px;
   }
 
@@ -751,7 +754,7 @@ a {
   }
 
   .home-play-first {
-    padding: 14px;
+    padding: 10px 9px 14px;
   }
 
   .home-game-frame {
