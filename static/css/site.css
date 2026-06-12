@@ -127,6 +127,128 @@ a {
   overflow: hidden;
 }
 
+.home-play-first {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+  gap: 20px;
+  align-items: start;
+  padding: 24px;
+}
+
+.home-game-column {
+  min-width: 0;
+}
+
+.home-game-column h1 {
+  margin: 0 0 8px;
+  font-size: clamp(2.35rem, 7vw, 4.8rem);
+  line-height: 0.94;
+  letter-spacing: 0;
+}
+
+.home-game-frame {
+  height: min(780px, calc(100dvh - 116px));
+  min-height: 640px;
+  margin-top: 16px;
+  border: 1px solid rgba(53, 230, 208, 0.22);
+  border-radius: var(--radius);
+  background: #050a11;
+  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.34);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+.home-game-frame iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #060b12;
+}
+
+.app-download-card {
+  position: sticky;
+  top: 16px;
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.app-download-card h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.app-card-copy,
+.qr-panel p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.store-buttons {
+  display: grid;
+  gap: 9px;
+}
+
+.store-button {
+  display: grid;
+  gap: 3px;
+  min-height: 54px;
+  padding: 11px 13px;
+  border: 1px solid rgba(53, 230, 208, 0.22);
+  border-radius: var(--radius);
+  background: #0b1c2b;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.store-button span {
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.store-button small {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+.store-button.is-unavailable {
+  border-style: dashed;
+  color: rgba(246, 251, 255, 0.72);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.app-download-card[data-platform="android"] [data-store-platform="android"],
+.app-download-card[data-platform="ios"] [data-store-platform="ios"] {
+  order: -1;
+}
+
+.qr-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.qr-placeholder {
+  display: grid;
+  place-items: center;
+  width: min(150px, 100%);
+  aspect-ratio: 1;
+  border: 1px dashed rgba(255, 255, 255, 0.26);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 25%, transparent 25% 50%, rgba(255, 255, 255, 0.06) 50% 75%, transparent 75%),
+    linear-gradient(180deg, rgba(53, 230, 208, 0.1), rgba(255, 208, 46, 0.08));
+  background-size: 28px 28px, auto;
+  color: var(--soft);
+  font-size: 0.85rem;
+  font-weight: 900;
+}
+
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.78fr);
@@ -491,13 +613,79 @@ a {
     flex-direction: column;
   }
 
+  .topbar {
+    gap: 8px;
+  }
+
+  .brand-name {
+    font-size: 1.2rem;
+  }
+
   .topnav,
   .footer-links {
     justify-content: flex-start;
+    gap: 5px;
   }
 
   .topnav a {
-    padding: 8px 7px;
+    min-height: 30px;
+    padding: 5px 6px;
+    font-size: 0.8rem;
+  }
+
+  .main {
+    margin-top: 10px;
+  }
+
+  .home-play-first {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 18px;
+  }
+
+  .home-game-column h1 {
+    font-size: clamp(2.15rem, 13vw, 3.6rem);
+  }
+
+  .home-game-column > .eyebrow,
+  .home-game-column > h1,
+  .home-game-column > .lead,
+  .home-game-column > .hero-copy {
+    display: none;
+  }
+
+  .home-game-column .lead {
+    font-size: 1.12rem;
+  }
+
+  .home-game-column .hero-copy {
+    margin-top: 7px;
+    font-size: 0.92rem;
+    line-height: 1.42;
+  }
+
+  .home-game-frame {
+    height: min(744px, calc(100dvh - 96px));
+    min-height: 610px;
+    margin-top: 12px;
+  }
+
+  .app-download-card {
+    position: static;
+    padding: 16px;
+  }
+
+  .store-buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .qr-panel {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .qr-placeholder {
+    width: 86px;
   }
 
   .hero,
@@ -554,5 +742,20 @@ a {
 
   .ringzzle-leaderboard-tabs button {
     flex: 1;
+  }
+}
+
+@media (max-width: 430px) {
+  .site {
+    padding-inline: 10px;
+  }
+
+  .home-play-first {
+    padding: 14px;
+  }
+
+  .home-game-frame {
+    height: min(716px, calc(100dvh - 88px));
+    min-height: 580px;
   }
 }

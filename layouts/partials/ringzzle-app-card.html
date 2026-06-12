@@ -1,0 +1,43 @@
+{{- $app := .Site.Data.ringzzle_app -}}
+{{- $androidURL := $app.android_url | default "" -}}
+{{- $iosURL := $app.ios_url | default "" -}}
+{{- $qrTarget := $app.qr_target_url | default "https://ringzzle.com/play/" -}}
+{{- $unavailable := $app.unavailable_label | default "Coming soon" -}}
+<aside class="app-download-card" aria-labelledby="ringzzle-app-card-title" data-ringzzle-app-card>
+  <p class="eyebrow">Mobile app</p>
+  <h2 id="ringzzle-app-card-title">Ringzzle on your phone</h2>
+  <p class="app-card-copy">Play instantly in your browser now. Official app store links will appear here when they are ready.</p>
+
+  <div class="store-buttons" aria-label="Ringzzle app store links">
+    {{ if $androidURL }}
+    <a class="store-button" href="{{ $androidURL }}" data-store-platform="android" rel="noopener">
+      <span>{{ $app.android_label | default "Google Play" }}</span>
+      <small>Android</small>
+    </a>
+    {{ else }}
+    <span class="store-button is-unavailable" data-store-platform="android" aria-disabled="true">
+      <span>{{ $app.android_label | default "Google Play" }}</span>
+      <small>{{ $unavailable }}</small>
+    </span>
+    {{ end }}
+
+    {{ if $iosURL }}
+    <a class="store-button" href="{{ $iosURL }}" data-store-platform="ios" rel="noopener">
+      <span>{{ $app.ios_label | default "App Store" }}</span>
+      <small>iPhone and iPad</small>
+    </a>
+    {{ else }}
+    <span class="store-button is-unavailable" data-store-platform="ios" aria-disabled="true">
+      <span>{{ $app.ios_label | default "App Store" }}</span>
+      <small>{{ $unavailable }}</small>
+    </span>
+    {{ end }}
+  </div>
+
+  <div class="qr-panel">
+    <div class="qr-placeholder" aria-hidden="true">
+      <span>QR</span>
+    </div>
+    <p>Mobile web target: <a href="{{ $qrTarget }}" rel="noopener">ringzzle.com/play</a></p>
+  </div>
+</aside>

@@ -2193,6 +2193,10 @@
 
     goHome() {
       if (typeof window !== "undefined" && window.location) {
+        if (window.parent && window.parent !== window && window.parent.location) {
+          window.parent.location.href = HOME_ROUTE;
+          return;
+        }
         window.location.href = HOME_ROUTE;
       }
     }

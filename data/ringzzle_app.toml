@@ -1,0 +1,6 @@
+android_url = ""
+ios_url = ""
+qr_target_url = "https://ringzzle.com/play/"
+android_label = "Google Play"
+ios_label = "App Store"
+unavailable_label = "Coming soon"
