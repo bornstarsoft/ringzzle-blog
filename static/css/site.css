@@ -633,6 +633,11 @@ a {
     font-size: 0.8rem;
   }
 
+  .topnav a[href="/"],
+  .topnav a[href="/#play"] {
+    display: none;
+  }
+
   .main {
     margin-top: 10px;
   }

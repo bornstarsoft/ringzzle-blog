@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v029.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v030.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -610,7 +610,7 @@ test("keeps sound off by default and requires an explicit user toggle", () => {
   assert.strictEqual(reloadState.userActivated, false);
 });
 
-test("recognizes only lightweight v029 sound event names", () => {
+test("recognizes only lightweight v030 sound event names", () => {
   ["place", "invalid", "line-clear", "color-burst", "game-over", "restart", "toggle-on", "toggle-off"].forEach((eventName) => {
     const cue = RingzzleCore.getSoundCueSpec(eventName);
     assert.strictEqual(cue.name, eventName);
@@ -672,8 +672,8 @@ test("hides tray rack and wells without removing tray hit areas", () => {
   assert.strictEqual(RingzzleCore.TRAY_VISUAL_STYLE.keepHitAreas, true);
 });
 
-test("formats v029 move feedback for placement, clears, combo, Color Burst, and game over", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v029");
+test("formats v030 move feedback for placement, clears, combo, Color Burst, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v030");
   assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),
@@ -712,6 +712,11 @@ test("keeps homepage embed controls minimal while preserving standalone controls
   assert.strictEqual(embed.showRankButton, false);
   assert.strictEqual(embed.showSoundButton, true);
   assert.strictEqual(embed.showRestartButton, true);
+});
+
+test("uses v030 cache-busted homepage embed mode", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v030");
+  assert.strictEqual(RingzzleCore.getPlayEmbedMode({ search: "?embed=home&v=030" }), "home");
 });
 
 test("dedupes Ringzzle leaderboard rows by normalized nickname without exposing private fields", async () => {
@@ -1032,7 +1037,7 @@ test("builds anonymous leaderboard submit payload from completed game state", ()
     nickname: "Nova",
     score: 1230,
     browserPlayerId: "browser-secret",
-    clientVersion: "v029",
+    clientVersion: "v030",
     bestClear: 2,
     lineClears: 8,
     colorBursts: 1,

@@ -1,7 +1,7 @@
 {{- $app := .Site.Data.ringzzle_app -}}
 {{- $androidURL := $app.android_url | default "" -}}
 {{- $iosURL := $app.ios_url | default "" -}}
-{{- $qrTarget := $app.qr_target_url | default "https://ringzzle.com/play/" -}}
+{{- $qrTarget := $app.qr_target_url | default "https://ringzzle.com/#play" -}}
 {{- $unavailable := $app.unavailable_label | default "Coming soon" -}}
 <aside class="app-download-card" aria-labelledby="ringzzle-app-card-title" data-ringzzle-app-card>
   <p class="eyebrow">Mobile app</p>
@@ -38,6 +38,6 @@
     <div class="qr-placeholder" aria-hidden="true">
       <span>QR</span>
     </div>
-    <p>Mobile web target: <a href="{{ $qrTarget }}" rel="noopener">ringzzle.com/play</a></p>
+    <p>Mobile web target: <a href="{{ $qrTarget }}" rel="noopener">ringzzle.com/#play</a></p>
   </div>
 </aside>
