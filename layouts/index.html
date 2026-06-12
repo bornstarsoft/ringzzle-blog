@@ -22,7 +22,7 @@
 
     <main class="main">
       <div class="home-shell">
-        <section class="home-play-first" aria-labelledby="ringzzle-home-title">
+        <section id="play" class="home-play-first" aria-labelledby="ringzzle-home-title">
           <div class="home-game-column">
             <p class="eyebrow">Ringzzle Classic</p>
             <h1 id="ringzzle-home-title">Ringzzle</h1>
@@ -78,7 +78,7 @@
             <p>Submit a nickname-only score after game over and compare real Today or All-Time entries. No fake rankings, no login, and no email.</p>
           </div>
           <div class="leaderboard-actions">
-            <a class="btn primary" href='{{ relURL "/" }}'>Play Ringzzle</a>
+            <a class="btn primary" href='{{ relURL "/" }}#play'>Play Ringzzle</a>
             <a class="btn" href='{{ relURL "leaderboard/" }}'>Leaderboard</a>
           </div>
         </section>

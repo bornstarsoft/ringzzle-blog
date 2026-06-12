@@ -10,4 +10,4 @@ sitemap:
 
 This archive preserves existing puzzle articles while Ringzzle.com becomes the official home for the Ringzzle web game. For the current game, start with the playable browser version and rules guide.
 
-[Play Ringzzle](/play/), read [How to Play Ringzzle](/how-to-play/), or view the [anonymous leaderboard](/leaderboard/).
+[Play Ringzzle](/#play), read [How to Play Ringzzle](/how-to-play/), or view the [anonymous leaderboard](/leaderboard/).

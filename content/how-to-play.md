@@ -11,7 +11,7 @@ sitemap:
 
 Ringzzle is a free color rings puzzle game for quick browser play. No install, account, or email is required.
 
-[Play Ringzzle](/play/) or [view the leaderboard](/leaderboard/).
+[Play Ringzzle](/#play) or [view the leaderboard](/leaderboard/).
 
 ## Board and tray
 
@@ -45,4 +45,4 @@ Ringzzle stores your local high score in your browser. After game over, you can 
 
 Start a run, keep the board open, and look for Color Burst chances when a cell can hold all three same-color rings.
 
-[Play Ringzzle](/play/) or [view the leaderboard](/leaderboard/).
+[Play Ringzzle](/#play) or [view the leaderboard](/leaderboard/).

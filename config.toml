@@ -26,7 +26,7 @@ pagerSize = 10
 
 [[params.nav_menu]]
   name = "Play"
-  url = "/play/"
+  url = "/#play"
 
 [[params.nav_menu]]
   name = "Leaderboard"

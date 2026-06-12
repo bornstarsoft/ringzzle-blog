@@ -17,4 +17,4 @@ Browser-based score submission cannot be perfectly cheat-proof, so the leaderboa
 
 Ringzzle may change rules, balance, presentation, or leaderboard behavior as the web game improves.
 
-[Play Ringzzle](/play/)
+[Play Ringzzle](/#play)

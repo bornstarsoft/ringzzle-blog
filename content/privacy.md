@@ -17,4 +17,4 @@ If you submit a leaderboard score, Ringzzle stores the nickname you enter, score
 
 Ringzzle does not add ads, analytics, in-app purchases, or email capture in the current web game.
 
-[Play Ringzzle](/play/)
+[Play Ringzzle](/#play)
