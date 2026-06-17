@@ -75,6 +75,7 @@ a {
   font-size: 1.45rem;
   font-weight: 900;
   letter-spacing: 0;
+  white-space: nowrap;
 }
 
 .topnav,
