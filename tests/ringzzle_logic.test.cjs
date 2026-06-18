@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v031.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v032.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -615,19 +615,86 @@ test("keeps sound off by default and requires an explicit user toggle", () => {
 
   assert.strictEqual(sound.enabled, false);
   assert.strictEqual(sound.userActivated, false);
+  assert.strictEqual(sound.audioReady, false);
   assert.strictEqual(RingzzleCore.getSoundButtonLabel(sound), "Sound Off");
 
   const enabled = RingzzleCore.resolveSoundToggleState(sound, { userGesture: true, audioReady: true });
   assert.strictEqual(enabled.enabled, true);
   assert.strictEqual(enabled.userActivated, true);
+  assert.strictEqual(enabled.audioReady, true);
   assert.strictEqual(RingzzleCore.getSoundButtonLabel(enabled), "Sound On");
+
+  const failed = RingzzleCore.resolveSoundToggleState(sound, { userGesture: true, audioReady: false });
+  assert.strictEqual(failed.enabled, false);
+  assert.strictEqual(failed.userActivated, true);
+  assert.strictEqual(failed.audioReady, false);
+  assert.strictEqual(failed.blocked, true);
+  assert.strictEqual(RingzzleCore.getSoundButtonLabel(failed), "Sound Off");
 
   const reloadState = RingzzleCore.createSoundState({ storedPreference: true });
   assert.strictEqual(reloadState.enabled, false, "stored preference must not auto-enable sound on reload");
   assert.strictEqual(reloadState.userActivated, false);
 });
 
-test("recognizes only lightweight v031 sound event names", () => {
+test("keeps Ringzzle audio unlock state truthful for Safari-style resume", () => {
+  const off = RingzzleCore.createSoundState();
+  const on = RingzzleCore.resolveSoundToggleState(off, { userGesture: true, audioReady: true });
+  const blocked = RingzzleCore.resolveSoundToggleState(off, { userGesture: true, audioReady: false });
+
+  assert.deepStrictEqual(RingzzleCore.getAudioUnlockStatus(off, "", false), {
+    ready: false,
+    pending: false,
+    blocked: false,
+  });
+  assert.deepStrictEqual(RingzzleCore.getAudioUnlockStatus(on, "running", true), {
+    ready: true,
+    pending: false,
+    blocked: false,
+  });
+  assert.deepStrictEqual(RingzzleCore.getAudioUnlockStatus(on, "suspended", false), {
+    ready: false,
+    pending: true,
+    blocked: true,
+  });
+  assert.deepStrictEqual(RingzzleCore.getAudioUnlockStatus(blocked, "suspended", false), {
+    ready: false,
+    pending: false,
+    blocked: true,
+  });
+});
+
+test("keeps disabled sound events no-op and enabled sound events playback-ready", () => {
+  const off = RingzzleCore.createSoundState();
+  const on = RingzzleCore.resolveSoundToggleState(off, { userGesture: true, audioReady: true });
+
+  assert.deepStrictEqual(RingzzleCore.getSoundPlaybackIntent(off, "running", "place"), {
+    recognized: true,
+    shouldAttempt: false,
+    blocked: false,
+    force: false,
+  });
+  assert.deepStrictEqual(RingzzleCore.getSoundPlaybackIntent(on, "running", "place"), {
+    recognized: true,
+    shouldAttempt: true,
+    blocked: false,
+    force: false,
+  });
+  assert.deepStrictEqual(RingzzleCore.getSoundPlaybackIntent(on, "suspended", "place"), {
+    recognized: true,
+    shouldAttempt: false,
+    blocked: true,
+    force: false,
+  });
+  assert.deepStrictEqual(RingzzleCore.getSoundPlaybackIntent(off, "suspended", "toggle-on", { force: true }), {
+    recognized: true,
+    shouldAttempt: true,
+    blocked: false,
+    force: true,
+  });
+  assert.strictEqual(RingzzleCore.getSoundPlaybackIntent(on, "running", "unknown").recognized, false);
+});
+
+test("recognizes only lightweight v032 sound event names", () => {
   ["place", "invalid", "line-clear", "color-burst", "game-over", "restart", "toggle-on", "toggle-off"].forEach((eventName) => {
     const cue = RingzzleCore.getSoundCueSpec(eventName);
     assert.strictEqual(cue.name, eventName);
@@ -689,8 +756,8 @@ test("hides tray rack and wells without removing tray hit areas", () => {
   assert.strictEqual(RingzzleCore.TRAY_VISUAL_STYLE.keepHitAreas, true);
 });
 
-test("formats v031 move feedback for placement, clears, combo, Color Burst, and game over", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v031");
+test("formats v032 move feedback for placement, clears, combo, Color Burst, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v032");
   assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),
@@ -731,9 +798,9 @@ test("keeps homepage embed controls minimal while preserving standalone controls
   assert.strictEqual(embed.showRestartButton, true);
 });
 
-test("uses v031 cache-busted homepage embed mode", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v031");
-  assert.strictEqual(RingzzleCore.getPlayEmbedMode({ search: "?embed=home&v=031" }), "home");
+test("uses v032 cache-busted homepage embed mode", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v032");
+  assert.strictEqual(RingzzleCore.getPlayEmbedMode({ search: "?embed=home&v=032" }), "home");
 });
 
 test("dedupes Ringzzle leaderboard rows by normalized nickname without exposing private fields", async () => {
@@ -1054,7 +1121,7 @@ test("builds anonymous leaderboard submit payload from completed game state", ()
     nickname: "Nova",
     score: 1230,
     browserPlayerId: "browser-secret",
-    clientVersion: "v031",
+    clientVersion: "v032",
     bestClear: 2,
     lineClears: 8,
     colorBursts: 1,
