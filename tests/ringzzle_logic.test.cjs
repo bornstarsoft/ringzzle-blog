@@ -1,6 +1,6 @@
 const assert = require("assert");
 
-const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v030.js");
+const { RingzzleCore } = require("../static/play/js/ringzzle-phaser.v031.js");
 
 function memoryStorage(initial = {}) {
   const store = { ...initial };
@@ -470,20 +470,37 @@ test("keeps extra breathing room between score panels and board on mobile", () =
 
 test("keeps drawn board frame and tray rack visually separated on mobile", () => {
   [
+    { width: 350, height: 610 },
+    { width: 350, height: 720 },
     { width: 390, height: 844 },
     { width: 393, height: 852 },
     { width: 430, height: 932 },
     { width: 390, height: 720 },
     { width: 393, height: 735 },
     { width: 430, height: 780 },
+    { width: 768, height: 1024 },
+    { width: 1200, height: 900 },
   ].forEach((viewport) => {
     const layout = RingzzleCore.calculateLayoutMetrics(viewport.width, viewport.height);
     const visualGap = RingzzleCore.getBoardTrayVisualGap(layout);
+    const trayMetrics = RingzzleCore.calculateTrayRingRenderMetrics(layout);
+    const boardBottom = layout.boardOrigin.y + layout.boardSize;
+    const trayRingTop = layout.trayY + layout.trayHeight / 2 - trayMetrics.largestRingDiameter / 2;
+    const minVisualGap = viewport.width < 560 ? 12 : 8;
     const trayBottom = layout.trayY + layout.trayHeight;
 
-    assert.ok(visualGap >= 6, `drawn board/tray gap should be visible at ${viewport.width}x${viewport.height}`);
+    assert.ok(visualGap >= minVisualGap, `drawn board/tray gap should be visible at ${viewport.width}x${viewport.height}`);
+    assert.ok(trayRingTop >= boardBottom + 20, `large tray rings should clear board frame at ${viewport.width}x${viewport.height}`);
     assert.ok(trayBottom <= viewport.height - layout.bottomGap, `tray should remain above Safari reserve at ${viewport.width}x${viewport.height}`);
   });
+});
+
+test("keeps Sound Off one-line control sizing safe on mobile", () => {
+  assert.ok(RingzzleCore.SOUND_BUTTON_MIN_WIDTH >= 82, "Sound Off button needs enough width to stay on one line");
+  assert.ok(RingzzleCore.CONTROL_BUTTON_MIN_HEIGHT >= 34, "top controls need a tappable minimum height");
+  assert.strictEqual(RingzzleCore.getSoundButtonDisplayWidth({ width: 58 }), RingzzleCore.SOUND_BUTTON_MIN_WIDTH);
+  assert.strictEqual(RingzzleCore.getSoundButtonDisplayWidth({ width: 94 }), 94);
+  assert.strictEqual(RingzzleCore.getControlButtonDisplayHeight({ height: 23 }), RingzzleCore.CONTROL_BUTTON_MIN_HEIGHT);
 });
 
 test("keeps status message below tray rings without Safari overflow on mobile", () => {
@@ -610,7 +627,7 @@ test("keeps sound off by default and requires an explicit user toggle", () => {
   assert.strictEqual(reloadState.userActivated, false);
 });
 
-test("recognizes only lightweight v030 sound event names", () => {
+test("recognizes only lightweight v031 sound event names", () => {
   ["place", "invalid", "line-clear", "color-burst", "game-over", "restart", "toggle-on", "toggle-off"].forEach((eventName) => {
     const cue = RingzzleCore.getSoundCueSpec(eventName);
     assert.strictEqual(cue.name, eventName);
@@ -672,8 +689,8 @@ test("hides tray rack and wells without removing tray hit areas", () => {
   assert.strictEqual(RingzzleCore.TRAY_VISUAL_STYLE.keepHitAreas, true);
 });
 
-test("formats v030 move feedback for placement, clears, combo, Color Burst, and game over", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v030");
+test("formats v031 move feedback for placement, clears, combo, Color Burst, and game over", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v031");
   assert.strictEqual(RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 10, clearEvents: 0 }), "Placed +10");
   assert.strictEqual(
     RingzzleCore.getMoveFeedbackLabel({ scoreDelta: 110, clearEvents: 1, lineClears: 1, cellBonuses: 0 }),
@@ -714,9 +731,9 @@ test("keeps homepage embed controls minimal while preserving standalone controls
   assert.strictEqual(embed.showRestartButton, true);
 });
 
-test("uses v030 cache-busted homepage embed mode", () => {
-  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v030");
-  assert.strictEqual(RingzzleCore.getPlayEmbedMode({ search: "?embed=home&v=030" }), "home");
+test("uses v031 cache-busted homepage embed mode", () => {
+  assert.strictEqual(RingzzleCore.CLIENT_VERSION, "v031");
+  assert.strictEqual(RingzzleCore.getPlayEmbedMode({ search: "?embed=home&v=031" }), "home");
 });
 
 test("dedupes Ringzzle leaderboard rows by normalized nickname without exposing private fields", async () => {
@@ -1037,7 +1054,7 @@ test("builds anonymous leaderboard submit payload from completed game state", ()
     nickname: "Nova",
     score: 1230,
     browserPlayerId: "browser-secret",
-    clientVersion: "v030",
+    clientVersion: "v031",
     bestClear: 2,
     lineClears: 8,
     colorBursts: 1,

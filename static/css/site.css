@@ -605,27 +605,40 @@ a {
 
 @media (max-width: 760px) {
   .site {
-    padding: 16px 14px 28px;
+    padding: 10px 14px 28px;
   }
 
-  .topbar,
   .footer {
     align-items: flex-start;
     flex-direction: column;
   }
 
   .topbar {
-    gap: 8px;
+    align-items: center;
+    flex-direction: row;
+    gap: 10px;
+    min-height: 36px;
   }
 
   .brand-name {
     font-size: 1.2rem;
   }
 
+  .brand {
+    flex: 0 0 auto;
+  }
+
   .topnav,
   .footer-links {
     justify-content: flex-start;
     gap: 5px;
+  }
+
+  .topnav {
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    min-width: 0;
   }
 
   .topnav a {
@@ -635,12 +648,14 @@ a {
   }
 
   .topnav a[href="/"],
-  .topnav a[href="/#play"] {
+  .topnav a[href="/#play"],
+  .topnav a[href="/how-to-play/"],
+  .topnav a[href="/posts/"] {
     display: none;
   }
 
   .main {
-    margin-top: 10px;
+    margin-top: 8px;
   }
 
   .home-play-first {
@@ -673,10 +688,10 @@ a {
   .home-game-frame {
     width: min(90vw, 400px);
     max-width: 100%;
-    height: min(744px, calc(100dvh - 96px));
+    height: min(754px, calc(100dvh - 70px));
     min-height: 610px;
     margin-inline: auto;
-    margin-top: 12px;
+    margin-top: 8px;
   }
 
   .app-download-card {
